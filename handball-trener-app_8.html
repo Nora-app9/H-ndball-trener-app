@@ -1,0 +1,2436 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Håndball Trener App</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117;
+      --bg2: #1a1d27;
+      --bg3: #22263a;
+      --accent: #e8fa5b;
+      --accent2: #4ade80;
+      --text: #f0f2f8;
+      --text2: #8b8fa8;
+      --border: rgba(255,255,255,0.08);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    #root { display: flex; height: 100vh; overflow: hidden; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem 1rem;
+      flex-shrink: 0;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 2rem; padding: 0 0.5rem;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .logo-text { font-size: 15px; font-weight: 600; color: var(--text); }
+    .logo-sub { font-size: 11px; color: var(--text2); margin-top: 1px; }
+
+    .nav-section { margin-bottom: 1.5rem; }
+    .nav-label {
+      font-size: 10px; font-weight: 600;
+      color: var(--text2); letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0 0.75rem; margin-bottom: 0.5rem;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 0.6rem 0.75rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text2);
+      transition: all 0.15s;
+      border: none; background: none; width: 100%; text-align: left;
+    }
+    .nav-item:hover { background: var(--bg3); color: var(--text); }
+    .nav-item.active { background: rgba(232,250,91,0.12); color: var(--accent); }
+    .nav-item .icon { font-size: 16px; width: 18px; text-align: center; }
+
+    /* Main */
+    .main {
+      flex: 1; overflow-y: auto;
+      padding: 2rem 2.5rem;
+      background: var(--bg);
+    }
+    .page-header {
+      margin-bottom: 2rem;
+    }
+    .page-title { font-size: 22px; font-weight: 600; }
+    .page-sub { font-size: 14px; color: var(--text2); margin-top: 4px; }
+
+    /* Cards */
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+    }
+    .card-title { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 1rem; letter-spacing: 0.04em; text-transform: uppercase; }
+
+    /* Grid */
+    .grid { display: grid; gap: 1rem; }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+    /* Stats */
+    .stat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+    }
+    .stat-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+    .stat-value { font-size: 28px; font-weight: 600; }
+    .stat-value.accent { color: var(--accent); }
+    .stat-value.green { color: var(--accent2); }
+
+    /* Buttons */
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-sm);
+      border: none; cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 500;
+      transition: all 0.15s;
+    }
+    .btn-primary { background: var(--accent); color: #0f1117; }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--bg3); color: var(--text); }
+    .btn-danger { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+    .btn-sm { padding: 0.35rem 0.75rem; font-size: 12px; }
+
+    /* Badge */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px; border-radius: 20px;
+      font-size: 11px; font-weight: 500;
+    }
+    .badge-green { background: rgba(74,222,128,0.15); color: var(--accent2); }
+    .badge-yellow { background: rgba(232,250,91,0.15); color: var(--accent); }
+    .badge-red { background: rgba(239,68,68,0.15); color: #f87171; }
+    .badge-blue { background: rgba(96,165,250,0.15); color: #60a5fa; }
+    .badge-gray { background: var(--bg3); color: var(--text2); }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; padding: 0.75rem 1rem; font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); }
+    td { padding: 0.75rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.04); color: var(--text); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* Avatar */
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    /* Input */
+    input, textarea, select {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      padding: 0.6rem 0.9rem;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    select option { background: var(--bg2); }
+
+    /* Form */
+    .form-group { margin-bottom: 1rem; }
+    .form-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; display: block; font-weight: 500; }
+
+    /* Checkbox row */
+    .check-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 0.6rem 0.75rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .check-row:hover { background: var(--bg3); }
+    .check-box {
+      width: 20px; height: 20px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .check-box.checked { background: var(--accent); border-color: var(--accent); color: #0f1117; }
+
+    /* Progress bar */
+    .progress { height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+    .progress-bar { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; background: var(--bg2); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--border); width: fit-content; }
+    .tab { padding: 0.4rem 1rem; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text2); border: none; background: none; font-family: inherit; transition: all 0.15s; }
+    .tab.active { background: var(--bg3); color: var(--text); }
+
+    /* Message bubble */
+    .msg-bubble {
+      max-width: 70%;
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .msg-bubble.sent { background: var(--accent); color: #0f1117; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .msg-bubble.received { background: var(--bg3); color: var(--text); align-self: flex-start; border-bottom-left-radius: 4px; }
+
+    /* Modal overlay */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .modal {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.75rem;
+      width: 480px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .modal-title { font-size: 16px; font-weight: 600; }
+
+    /* Loading */
+    .loading { display: flex; align-items: center; justify-content: center; height: 200px; color: var(--text2); gap: 8px; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* AI chat */
+    .chat-window { display: flex; flex-direction: column; height: calc(100vh - 200px); }
+    .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 1rem 0; }
+    .chat-input-row { display: flex; gap: 8px; margin-top: 1rem; }
+
+    .season-month { padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 0.5rem; }
+    .season-month:hover { border-color: rgba(232,250,91,0.3); }
+
+    .injury-card { padding: 1rem; border: 1px solid rgba(239,68,68,0.2); border-radius: var(--radius-sm); background: rgba(239,68,68,0.05); margin-bottom: 0.75rem; }
+    .mastery-card { padding: 1rem; border: 1px solid rgba(74,222,128,0.2); border-radius: var(--radius-sm); background: rgba(74,222,128,0.05); margin-bottom: 0.75rem; }
+
+    @media (max-width: 768px) {
+      .sidebar { width: 60px; }
+      .logo-text, .logo-sub, .nav-label, .nav-item span { display: none; }
+      .nav-item { justify-content: center; }
+      .main { padding: 1rem; }
+      .grid-4 { grid-template-columns: repeat(2, 1fr); }
+      .grid-3 { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// Supabase setup - URL satt, anon key må legges inn
+const SUPABASE_URL = 'https://mnidhkpyrbhiiqnknzmm.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1uaWRoa3B5cmJoaWlxbmtuem1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNTYxNjksImV4cCI6MjA5MzczMjE2OX0.AlLRO6xOrPWGJ9uwWvmnBaSZbEh1WbN_50FLBX3e7VI';
+
+let supabase = null;
+try {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} catch(e) {}
+
+// ---- MOCK DATA (brukes inntil Supabase er satt opp) ----
+const MOCK_PLAYERS = [
+  { id: 1,  name: 'Aria',      position: 'Høyre back',      strengths: 'Finte innover, forsvar',                    weaknesses: 'Skudd utenfra',                          notes: '', attendance_rate: 0, avatar_color: '#e8fa5b' },
+  { id: 2,  name: 'Arya',      position: 'Midtre bakspiller', strengths: 'Overblikk, 5-1 forsvar, finter',           weaknesses: 'Skudd utenfra, gjennombrudd',             notes: '', attendance_rate: 0, avatar_color: '#4ade80' },
+  { id: 3,  name: 'Anna',      position: 'Høyre ving',      strengths: 'Kantskudd',                                 weaknesses: 'Variasjon av skudd',                      notes: '', attendance_rate: 0, avatar_color: '#60a5fa' },
+  { id: 4,  name: 'Asuda',     position: 'Høyre back',      strengths: 'Forsvar, lese spillet',                     weaknesses: 'Lav arm, skuddkraft',                     notes: '', attendance_rate: 0, avatar_color: '#f472b6' },
+  { id: 5,  name: 'Mari',      position: 'Midtre bakspiller', strengths: 'Skuddkraft',                              weaknesses: 'Ballkontroll',                             notes: 'Allsidig – kan spille flere posisjoner', attendance_rate: 0, avatar_color: '#fb923c' },
+  { id: 6,  name: 'Jenny',     position: 'Keeper',          strengths: 'Leser skuddene',                            weaknesses: 'Trekker seg',                             notes: '', attendance_rate: 0, avatar_color: '#a78bfa' },
+  { id: 7,  name: 'Eira',      position: 'Keeper',          strengths: 'Høy og eksplosiv',                          weaknesses: 'Trekker seg litt',                        notes: '', attendance_rate: 0, avatar_color: '#34d399' },
+  { id: 8,  name: 'Vida M',    position: 'Midtre bakspiller', strengths: 'Overblikk, spillforståelse, videre spill', weaknesses: 'Gå mer for seg selv, skudd, gjennombrudd', notes: '', attendance_rate: 0, avatar_color: '#f59e0b' },
+  { id: 9,  name: 'Vilde',     position: 'Venstre back',    strengths: 'Gjennombrudd, skudd',                       weaknesses: 'Videreutvikle skudd',                     notes: '', attendance_rate: 0, avatar_color: '#e879f9' },
+  { id: 10, name: 'Julie',     position: 'Høyre back',      strengths: 'Forsvar, styrke',                           weaknesses: 'Skudd fra 9-meter',                       notes: '', attendance_rate: 0, avatar_color: '#38bdf8' },
+  { id: 11, name: 'Marcelina', position: 'Høyre back',      strengths: 'Skuddkraft',                                weaknesses: 'Skuddplassering, tempo i spillet',        notes: '', attendance_rate: 0, avatar_color: '#e8fa5b' },
+  { id: 12, name: 'Emma',      position: 'Venstre ving',    strengths: 'Teknikk, skudd',                            weaknesses: 'Guts – ikke trampe på seg selv',          notes: '', attendance_rate: 0, avatar_color: '#4ade80' },
+  { id: 13, name: 'Emmeline',  position: 'Venstre back',    strengths: 'Skuddkraft',                                weaknesses: 'Skuddplassering',                         notes: '', attendance_rate: 0, avatar_color: '#60a5fa' },
+  { id: 14, name: 'Celini',    position: 'Høyre ving',      strengths: 'Skuddplassering',                           weaknesses: 'Finte, gjennombrudd',                     notes: '', attendance_rate: 0, avatar_color: '#f472b6' },
+  { id: 15, name: 'Vida E',    position: 'Venstre back',    strengths: 'Overblikk, tempo',                          weaknesses: 'Gjennombrudd, finte',                     notes: '', attendance_rate: 0, avatar_color: '#fb923c' },
+  { id: 16, name: 'Tonje',     position: 'Høyre ving',      strengths: 'Kantskudd',                                 weaknesses: 'Skuddplassering, skyte nede',             notes: '', attendance_rate: 0, avatar_color: '#a78bfa' },
+  { id: 17, name: 'Leah',      position: 'Høyre back',      strengths: 'Stegskudd, finte',                          weaknesses: 'Hoppskudd',                               notes: '', attendance_rate: 0, avatar_color: '#34d399' },
+  { id: 18, name: 'Live',      position: 'Keeper',          strengths: 'Utfall',                                    weaknesses: 'Opptrekk, 6-meter skudd',                 notes: '', attendance_rate: 0, avatar_color: '#f59e0b' },
+  { id: 19, name: 'Evalina',   position: 'Venstre ving',    strengths: 'Skuddplassering',                           weaknesses: 'Hoppskudd',                               notes: '', attendance_rate: 0, avatar_color: '#e879f9' },
+  { id: 20, name: 'Imani',     position: 'Høyre back',      strengths: 'Gjennombrudd',                              weaknesses: 'Skudd',                                   notes: '', attendance_rate: 0, avatar_color: '#38bdf8' },
+  { id: 21, name: 'Kathrine',  position: 'Venstre back',    strengths: 'Skudd',                                     weaknesses: 'Hoppskudd, stegskudd',                    notes: '', attendance_rate: 0, avatar_color: '#e8fa5b' },
+  { id: 22, name: 'Andrea',    position: 'Keeper',          strengths: 'Utfall',                                    weaknesses: '6-meter skudd',                           notes: '', attendance_rate: 0, avatar_color: '#4ade80' },
+  { id: 23, name: 'Milla',     position: 'Høyre back',      strengths: 'Fart',                                      weaknesses: 'Skudd og finte',                          notes: 'Allsidig – kan spille flere posisjoner', attendance_rate: 0, avatar_color: '#60a5fa' },
+  { id: 24, name: 'Josefine',  position: 'Pivotspiller',    strengths: 'Rykk',                                      weaknesses: 'Sperre og skuddplassering',               notes: '', attendance_rate: 0, avatar_color: '#f472b6' },
+];
+
+const MOCK_TRAININGS = [];
+
+const MOCK_MASTERY = [];
+const MOCK_INJURIES = [];
+
+const SEASON_PLAN = [
+  {
+    month: 'Mai–Juni', phase: 'Sesongoppkjøring start', type: 'physical',
+    focus: ['Grunnkondisjon – rolig løp 3x/uke', 'Styrke og kjerneøvelser', 'Koordinasjon og bevegelighet'],
+    note: 'Bygg grunnlaget for sommeren. Fokus på individuell utvikling og fysikk.',
+    events: []
+  },
+  {
+    month: 'Juli', phase: 'Sommertrening', type: 'physical',
+    focus: ['Intervalltrening og spenst', 'Tekniske individualøvelser på egen hånd', 'Styrke 2x/uke'],
+    note: 'Spillerne trener mye selvstendig. Bruk individuelle planer i appen aktivt denne måneden.',
+    events: []
+  },
+  {
+    month: 'August', phase: 'Oppkjøring mot sesong', type: 'mixed',
+    focus: ['Lagspill og systeminnøving', 'Forsvar 6-0 grunnlag', 'Etablert angrep – grunnstruktur', 'Fysisk toppform'],
+    note: 'Intensiteten øker. Kombiner fysikk og teknikk. Forbered laget til oppkjøringscupen.',
+    events: [{ label: '🏆 Oppkjøringscup', color: '#e8fa5b', desc: 'Første konkurransetest før seriesesongen. Fokus på å spille sammen og prøve ut systemer.' }]
+  },
+  {
+    month: 'September', phase: 'Sesongstart', type: 'tactical',
+    focus: ['Etablert angrep – detaljer', 'Forsvar 6-0 og 5-1', 'Ankomstfase og rask kontring', 'Mentalt fokus – vinnerkultur'],
+    note: 'Serien starter midten av september. Alle kamper teller. Fokus på lagspill og å vinne seriekamper.',
+    events: [{ label: '🏁 Seriestart', color: '#4ade80', desc: 'Seriesesongen starter. Mål: vinne serien og kvalifisere til regionalt sluttspill.' }]
+  },
+  {
+    month: 'Oktober', phase: 'Sesong + Helvettes helg', type: 'mixed',
+    focus: ['Seriekamper – konsolidering', 'Forsvarsdisiplin og kommunikasjon', 'Individuell teknikk mellom kamper'],
+    note: 'Høstferie i starten av oktober – perfekt timing for en tøff treningshelg!',
+    events: [{ label: '💀 Helvettes helg', color: '#f87171', desc: 'Intensiv treningsleir i høstferien. Mye tung fysisk trening, lagbygging og taktikk. Tøft – men gull for samholdet!' }]
+  },
+  {
+    month: 'November', phase: 'Sesong – høy intensitet', type: 'tactical',
+    focus: ['Spesialsituasjoner – frispark og keeper-utkast', 'Rask kontring etter ballvinning', 'Keeper–skytter samspill', 'Mentalt fokus under press'],
+    note: 'Viktig seriemåned. Analyser motstanderne og juster taktikken etter hvert.',
+    events: []
+  },
+  {
+    month: 'Desember', phase: 'Avslutning av høstsesongen', type: 'mixed',
+    focus: ['Vedlikehold fysikk – ikke overtren', 'Spillforståelse og valg i angrep', 'Lagmoral og julestemning 🎄', 'Evaluering av høstsesongen'],
+    note: 'Rolig ned mot jul. Evaluer hva som fungerer og sett mål for våren.',
+    events: []
+  },
+  {
+    month: 'Januar', phase: 'Vinteroppkjøring', type: 'physical',
+    focus: ['Fysisk reset etter jul – grunnkondisjon', 'Tekniske detaljer i rolig tempo', 'Forsvarssystem repetisjon', 'Spenst og eksplosivitet'],
+    note: 'Bruk januar til å nullstille fysikken og skjerpe teknikken før vårsesongen.',
+    events: []
+  },
+  {
+    month: 'Februar', phase: 'Vårsesongen – sluttspurtkjøring', type: 'tactical',
+    focus: ['Seriekamper – avgjørende runde', 'Trykksituasjoner og mental trening', 'Skuddøvelser og avslutning', 'Maksimer seriepoeng'],
+    note: 'Nå begynner det å telle for alvor. Fokus på å sikre serieplassen som gir sluttspill.',
+    events: []
+  },
+  {
+    month: 'Mars', phase: 'Serieslutt – forberedelse sluttspill', type: 'tactical',
+    focus: ['Finpuss av angrepssystem', 'Forsvar mot sterkere motstandere', 'Videospilling og taktisk analyse', 'Lagspirit og tro på prosjektet'],
+    note: 'Serien avsluttes. Sikre kvalifisering til regionalt sluttspill. Analyser og forbered.',
+    events: []
+  },
+  {
+    month: 'April', phase: 'Sluttspill + Utenlandscup', type: 'mixed',
+    focus: ['Topp fysisk og mental form', 'Fleksibel taktikk mot ukjente motstandere', 'Lagkultur og samhold', 'Nyt opplevelsen – dette er gull!'],
+    note: 'Den store måneden! Regionalt sluttspill OG utenlandscup. Toppform og god stemning.',
+    events: [
+      { label: '🌍 Utenlandscup', color: '#a78bfa', desc: 'Internasjonal erfaring og lagopplevelse. Nyt det – dette husker spillerne hele livet!' },
+      { label: '🥇 Regionalt sluttspill', color: '#e8fa5b', desc: 'Sesongens høydepunkt. Alt arbeidet gjennom året munner ut i dette. Vinn det!' }
+    ]
+  },
+  {
+    month: 'Mai', phase: 'Sesongavslutning', type: 'evaluation',
+    focus: ['Evaluering av hele sesongen', 'Individuell tilbakemelding til hver spiller', 'Feire det dere har oppnådd! 🎉', 'Planlegg neste sesong'],
+    note: 'Sesongen er over. Gi spillerne skryt, evaluer ærlig og sett retning for neste år.',
+    events: []
+  },
+];
+
+const POSITIONS = ['Keeper','Høyreving','Venstre ving','Høyre back','Venstre back','Midtre bakspiller','Playmaker','Pivotspiller'];
+const SKILLS = ['Underarmskudd','Hoppskudd','Pasning','Mottak','Forsvar 1v1','Forsvarsstilling','Dribling','Innkast','Friplast','Kondisjon','Styrke','Spenst','Koordinasjon'];
+
+// ---- HELPERS ----
+function initials(name) { return name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase(); }
+function formatDate(d) { return new Date(d).toLocaleDateString('no-NO', {day:'numeric', month:'short'}); }
+function getAvatar(name, color='#e8fa5b') {
+  return <div className="avatar" style={{background: color+'22', border:`1px solid ${color}44`, color: color}}>{initials(name)}</div>;
+}
+
+// ---- COMPONENTS ----
+
+function Dashboard({ players, trainings, mastery, injuries }) {
+  const totalTrainings = trainings.length;
+  const avgAttendance = players.length ? Math.round(players.reduce((a,p)=>a+p.attendance_rate,0)/players.length) : 0;
+  const activeInjuries = injuries.filter(i=>i.status==='aktiv').length;
+  const recentMastery = mastery.slice(-3).reverse();
+
+  return (
+    <div>
+      <div className="page-header">
+        <div className="page-title">Oversikt 👋</div>
+        <div className="page-sub">Jenter 13 — Sesong 2024/2025</div>
+      </div>
+
+      <div className="grid grid-4" style={{marginBottom:'1.5rem'}}>
+        <div className="stat-card"><div className="stat-label">Spillere</div><div className="stat-value accent">{players.length}</div></div>
+        <div className="stat-card"><div className="stat-label">Treningsøkter</div><div className="stat-value">{totalTrainings}</div></div>
+        <div className="stat-card"><div className="stat-label">Gj.snitt oppmøte</div><div className="stat-value green">{avgAttendance}%</div></div>
+        <div className="stat-card"><div className="stat-label">Aktive skader</div><div className="stat-value" style={{color:'#f87171'}}>{activeInjuries}</div></div>
+      </div>
+
+      <div className="grid grid-2">
+        <div className="card">
+          <div className="card-title">Siste mestring 🏆</div>
+          {recentMastery.length === 0 && <p style={{color:'var(--text2)',fontSize:'13px'}}>Ingen registrert ennå</p>}
+          {recentMastery.map(m => {
+            const p = players.find(pl=>pl.id===m.player_id);
+            return (
+              <div key={m.id} style={{display:'flex',gap:'10px',marginBottom:'0.85rem',alignItems:'flex-start'}}>
+                {p && getAvatar(p.name, p.avatar_color)}
+                <div>
+                  <div style={{fontSize:'13px',fontWeight:500}}>{p?.name} <span className="badge badge-green">{m.skill}</span></div>
+                  <div style={{fontSize:'12px',color:'var(--text2)',marginTop:2}}>{m.note}</div>
+                  <div style={{fontSize:'11px',color:'var(--text2)',marginTop:2}}>{formatDate(m.date)}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="card">
+          <div className="card-title">Oppmøtetoppen</div>
+          {[...players].sort((a,b)=>b.attendance_rate-a.attendance_rate).slice(0,5).map(p => (
+            <div key={p.id} style={{display:'flex',alignItems:'center',gap:10,marginBottom:'0.75rem'}}>
+              {getAvatar(p.name, p.avatar_color)}
+              <div style={{flex:1}}>
+                <div style={{fontSize:'13px',fontWeight:500,marginBottom:3}}>{p.name}</div>
+                <div className="progress"><div className="progress-bar" style={{width:`${p.attendance_rate}%`}}></div></div>
+              </div>
+              <span style={{fontSize:'13px',fontWeight:600,color:'var(--accent)',minWidth:36,textAlign:'right'}}>{p.attendance_rate}%</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Players({ players, setPlayers, mastery, injuries }) {
+  const [selected, setSelected] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({name:'',number:'',position:'Keeper',strengths:'',weaknesses:'',notes:''});
+  const [tab, setTab] = useState('profil');
+
+  function openNew() { setForm({name:'',number:'',position:'Keeper',strengths:'',weaknesses:'',notes:''}); setShowModal(true); setSelected(null); }
+  function openEdit(p) { setForm({...p}); setSelected(p); setShowModal(true); }
+
+  function savePlayer() {
+    if (!form.name) return;
+    if (selected) {
+      setPlayers(ps => ps.map(p => p.id===selected.id ? {...p,...form} : p));
+    } else {
+      const colors = ['#e8fa5b','#4ade80','#60a5fa','#f472b6','#fb923c','#a78bfa','#34d399','#f59e0b'];
+      setPlayers(ps => [...ps, {...form, id: Date.now(), attendance_rate: 0, avatar_color: colors[ps.length % colors.length]}]);
+    }
+    setShowModal(false);
+  }
+
+  function deletePlayer(id) { setPlayers(ps => ps.filter(p=>p.id!==id)); }
+
+  const [detailPlayer, setDetailPlayer] = useState(null);
+
+  if (detailPlayer) {
+    const p = players.find(pl=>pl.id===detailPlayer);
+    const playerMastery = mastery.filter(m=>m.player_id===detailPlayer);
+    const playerInjuries = injuries.filter(i=>i.player_id===detailPlayer);
+    return (
+      <div>
+        <div style={{display:'flex',alignItems:'center',gap:'1rem',marginBottom:'1.5rem'}}>
+          <button className="btn btn-ghost btn-sm" onClick={()=>setDetailPlayer(null)}>← Tilbake</button>
+          <div className="page-title">{p?.name}</div>
+          <span className="badge badge-gray">{p?.position}</span>
+          {p && <button className="btn btn-ghost btn-sm" onClick={()=>openEdit(p)}>Rediger</button>}
+        </div>
+
+        <div className="tabs">
+          {['profil','mestring','skader'].map(t=><button key={t} className={`tab${tab===t?' active':''}`} onClick={()=>setTab(t)}>{t.charAt(0).toUpperCase()+t.slice(1)}</button>)}
+        </div>
+
+        {tab==='profil' && p && (
+          <div className="grid grid-2">
+            <div className="card">
+              <div className="card-title">Styrker</div>
+              <p style={{fontSize:'14px',color:'var(--accent2)'}}>{p.strengths || 'Ikke registrert'}</p>
+            </div>
+            <div className="card">
+              <div className="card-title">Forbedringsområder</div>
+              <p style={{fontSize:'14px',color:'#fb923c'}}>{p.weaknesses || 'Ikke registrert'}</p>
+            </div>
+            <div className="card" style={{gridColumn:'1/-1'}}>
+              <div className="card-title">Notater fra trenere</div>
+              <p style={{fontSize:'14px',color:'var(--text2)'}}>{p.notes || 'Ingen notater ennå'}</p>
+            </div>
+          </div>
+        )}
+
+        {tab==='mestring' && (
+          <div>
+            {playerMastery.length === 0 && <p style={{color:'var(--text2)',fontSize:'14px'}}>Ingen mestringsregistreringer ennå.</p>}
+            {playerMastery.map(m=>(
+              <div key={m.id} className="mastery-card">
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+                  <span className="badge badge-green">{m.skill}</span>
+                  <span style={{fontSize:'11px',color:'var(--text2)'}}>{formatDate(m.date)}</span>
+                </div>
+                <p style={{fontSize:'14px',marginTop:6}}>{m.note}</p>
+                <p style={{fontSize:'12px',color:'var(--text2)',marginTop:4}}>{m.coach}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {tab==='skader' && (
+          <div>
+            {playerInjuries.length === 0 && <p style={{color:'var(--text2)',fontSize:'14px'}}>Ingen skaderegistreringer.</p>}
+            {playerInjuries.map(i=>(
+              <div key={i.id} className="injury-card">
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+                  <span style={{fontWeight:500}}>{i.type}</span>
+                  <span className={`badge ${i.status==='aktiv'?'badge-red':'badge-green'}`}>{i.status}</span>
+                </div>
+                <p style={{fontSize:'14px',color:'var(--text2)',marginTop:4}}>{i.description}</p>
+                <p style={{fontSize:'12px',color:'var(--text2)',marginTop:4}}>Forventet tilbake: {i.return_date ? formatDate(i.return_date) : '–'}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="page-header" style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+        <div>
+          <div className="page-title">Spillerprofiler</div>
+          <div className="page-sub">{players.length} spillere registrert</div>
+        </div>
+        <button className="btn btn-primary" onClick={openNew}>+ Ny spiller</button>
+      </div>
+
+      <div className="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Spiller</th>
+              <th>#</th>
+              <th>Posisjon</th>
+              <th>Oppmøte</th>
+              <th>Styrker</th>
+              <th>Fokus</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {players.map(p => (
+              <tr key={p.id}>
+                <td>
+                  <div style={{display:'flex',alignItems:'center',gap:8}}>
+                    {getAvatar(p.name, p.avatar_color)}
+                    <span style={{fontWeight:500,cursor:'pointer',color:'var(--accent)'}} onClick={()=>setDetailPlayer(p.id)}>{p.name}</span>
+                  </div>
+                </td>
+                <td style={{color:'var(--text2)'}}>{p.number}</td>
+                <td><span className="badge badge-gray">{p.position}</span></td>
+                <td>
+                  <div style={{display:'flex',alignItems:'center',gap:8}}>
+                    <div className="progress" style={{width:60}}><div className="progress-bar" style={{width:`${p.attendance_rate}%`}}></div></div>
+                    <span style={{fontSize:'12px',color:'var(--text2)'}}>{p.attendance_rate}%</span>
+                  </div>
+                </td>
+                <td style={{fontSize:'13px',color:'var(--accent2)',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.strengths||'–'}</td>
+                <td style={{fontSize:'13px',color:'#fb923c',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.weaknesses||'–'}</td>
+                <td>
+                  <div style={{display:'flex',gap:6}}>
+                    <button className="btn btn-ghost btn-sm" onClick={()=>openEdit(p)}>Rediger</button>
+                    <button className="btn btn-danger btn-sm" onClick={()=>deletePlayer(p.id)}>×</button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {showModal && (
+        <div className="modal-overlay" onClick={()=>setShowModal(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title">{selected ? 'Rediger spiller' : 'Legg til spiller'}</div>
+              <button className="btn btn-ghost btn-sm" onClick={()=>setShowModal(false)}>×</button>
+            </div>
+            <div className="form-group"><label className="form-label">Navn</label><input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Fullt navn" /></div>
+            <div className="grid grid-2">
+              <div className="form-group"><label className="form-label">Nummer</label><input value={form.number} onChange={e=>setForm({...form,number:e.target.value})} placeholder="7" /></div>
+              <div className="form-group"><label className="form-label">Posisjon</label>
+                <select value={form.position} onChange={e=>setForm({...form,position:e.target.value})}>
+                  {POSITIONS.map(pos=><option key={pos}>{pos}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="form-group"><label className="form-label">Styrker</label><input value={form.strengths} onChange={e=>setForm({...form,strengths:e.target.value})} placeholder="f.eks. Rask, god avslutter" /></div>
+            <div className="form-group"><label className="form-label">Forbedringsområder</label><input value={form.weaknesses} onChange={e=>setForm({...form,weaknesses:e.target.value})} placeholder="f.eks. Underarmskudd, forsvar" /></div>
+            <div className="form-group"><label className="form-label">Notater</label><textarea rows={3} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="Trenernotater..." /></div>
+            <div style={{display:'flex',gap:8,justifyContent:'flex-end',marginTop:'0.5rem'}}>
+              <button className="btn btn-ghost" onClick={()=>setShowModal(false)}>Avbryt</button>
+              <button className="btn btn-primary" onClick={savePlayer}>Lagre</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Attendance({ players, trainings, setTrainings }) {
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({ date: new Date().toISOString().split('T')[0], type: 'Teknisk', present: [] });
+
+  function togglePresent(id) {
+    setForm(f => ({ ...f, present: f.present.includes(id) ? f.present.filter(x=>x!==id) : [...f.present, id] }));
+  }
+
+  function saveTraining() {
+    setTrainings(ts => [...ts, { ...form, id: Date.now(), absent: players.filter(p=>!form.present.includes(p.id)).map(p=>p.id) }]);
+    setShowModal(false);
+    setForm({ date: new Date().toISOString().split('T')[0], type: 'Teknisk', present: [] });
+  }
+
+  function markAll() { setForm(f=>({...f, present: players.map(p=>p.id)})); }
+
+  return (
+    <div>
+      <div className="page-header" style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+        <div>
+          <div className="page-title">Oppmøteregister</div>
+          <div className="page-sub">{trainings.length} treningsøkter registrert</div>
+        </div>
+        <button className="btn btn-primary" onClick={()=>setShowModal(true)}>+ Registrer økt</button>
+      </div>
+
+      <div className="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Dato</th>
+              <th>Type</th>
+              <th>Til stede</th>
+              <th>Fraværende</th>
+              <th>Oppmøte</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...trainings].reverse().map(t => {
+              const pct = players.length ? Math.round(t.present.length/players.length*100) : 0;
+              const absentPlayers = players.filter(p=>t.absent.includes(p.id));
+              return (
+                <tr key={t.id}>
+                  <td style={{fontWeight:500}}>{formatDate(t.date)}</td>
+                  <td><span className="badge badge-blue">{t.type}</span></td>
+                  <td style={{color:'var(--accent2)',fontWeight:500}}>{t.present.length}</td>
+                  <td>
+                    <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+                      {absentPlayers.map(p=><span key={p.id} className="badge badge-red" style={{fontSize:'10px'}}>{p.name.split(' ')[0]}</span>)}
+                    </div>
+                  </td>
+                  <td>
+                    <div style={{display:'flex',alignItems:'center',gap:8}}>
+                      <div className="progress" style={{width:80}}><div className="progress-bar" style={{width:`${pct}%`,background:pct>85?'var(--accent2)':'var(--accent)'}}></div></div>
+                      <span style={{fontSize:'12px',color:'var(--text2)'}}>{pct}%</span>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {showModal && (
+        <div className="modal-overlay" onClick={()=>setShowModal(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title">Registrer treningsøkt</div>
+              <button className="btn btn-ghost btn-sm" onClick={()=>setShowModal(false)}>×</button>
+            </div>
+            <div className="grid grid-2" style={{marginBottom:'1rem'}}>
+              <div className="form-group"><label className="form-label">Dato</label><input type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} /></div>
+              <div className="form-group"><label className="form-label">Type</label>
+                <select value={form.type} onChange={e=>setForm({...form,type:e.target.value})}>
+                  {['Teknisk','Taktisk – forsvar','Taktisk – angrep','Fysisk','Kamp + gjennomgang','Keepertrening'].map(t=><option key={t}>{t}</option>)}
+                </select>
+              </div>
+            </div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.75rem'}}>
+              <label className="form-label" style={{margin:0}}>Hvem møtte opp? ({form.present.length}/{players.length})</label>
+              <button className="btn btn-ghost btn-sm" onClick={markAll}>Alle til stede</button>
+            </div>
+            <div style={{maxHeight:240,overflowY:'auto',marginBottom:'1rem'}}>
+              {players.map(p => (
+                <div key={p.id} className="check-row" onClick={()=>togglePresent(p.id)}>
+                  <div className={`check-box${form.present.includes(p.id)?' checked':''}`}>{form.present.includes(p.id)?'✓':''}</div>
+                  {getAvatar(p.name, p.avatar_color)}
+                  <span style={{fontSize:'14px'}}>{p.name}</span>
+                  <span style={{fontSize:'12px',color:'var(--text2)',marginLeft:'auto'}}>#{p.number}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
+              <button className="btn btn-ghost" onClick={()=>setShowModal(false)}>Avbryt</button>
+              <button className="btn btn-primary" onClick={saveTraining}>Lagre økt</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function IndividualPlans({ players }) {
+  const [selected, setSelected] = useState(players[0]?.id || null);
+  const [skillTab, setSkillTab] = useState('teknikk');
+  const player = players.find(p=>p.id===selected);
+
+  const SKILLS_BY_POSITION = {
+    'Keeper': {
+      label: 'Målvakt', color: '#f472b6',
+      skills: [
+        { name: 'Plassering / grunnposisjon', video: 'nZ77dnvnTzM', steps: ['Stå med lett bøyde knær og hoftebreddes avstand mellom føttene.','Hold kroppen lett fremoverlent med vekt på tærne – klar til å reagere.','Plasser deg alltid på skuddvinkelbisektoren mellom de to stolpene og ballen.','Armene holdes fremfor kroppen i ca. 90° vinkel, hendene opp og åpne.','Tilpass posisjonen kontinuerlig etter hvor ballen er på banen.'] },
+        { name: 'Forflytning', video: 'nZ77dnvnTzM', steps: ['Bruk sidestelleg (chassé) langs mållinjen – ikke kryss beina.','Hold alltid ansiktet mot ballen under forflytning.','Bruk korte, raske steg nær mål og lengre steg ved høy vinkel.','Tren på å flytte deg raskt fra stolpe til stolpe på signal.','Kombiner forflytning med ny grunnposisjon uten å stoppe.'] },
+        { name: 'Utfall ned og oppe', video: 'nZ77dnvnTzM', steps: ['Utfall ned: skyv ett bein ut til siden og fall kontrollert ned på hoften – ikke kast deg.','Strekk ut det nedre beinet mot ballen og hold overarmen langs gulvet.','Utfall oppe: løft ett kne og strekk arm i samme retning for å dekke høy vinkel.','Tren på å komme raskt opp igjen etter utfall ned – sett deg opp via kjernen.','Øv begge sider like mye – venstre og høyre utfall separat.'] },
+        { name: 'Langpasninger / igangsetting', video: 'nZ77dnvnTzM', steps: ['Etter redning: se opp umiddelbart og finn en ledig medspiller.','Bruk overarmskast for lange pasninger til kantspillere i rask kontring.','Tren på å kaste presist til begge sider med én hånd.','Øv på å sparke ballen langt og presist (presis fotarbeid).','Koordiner igangsetting med lagkameratene – avtal signaler på forhånd.'] },
+      ]
+    },
+    'Høyreving': {
+      label: 'Kantspiller', color: '#60a5fa',
+      skills: [
+        { name: 'Skyte kort / langt', video: 'llqJgAr1qTE', steps: ['Kort vinkel: sikt i nærmeste hjørne mellom keeper og stolpe – vær rask og nøyaktig.','Lang vinkel: bruk kroppsfinte for å åpne vinkelen, sikt i det lengste hjørnet.','Hold skuddarmen tett inntil kroppen for å skjule skuddet lengst mulig.','Tren på å skyte fra stillende og etter løp – keeper reagerer annerledes.','Varier hastighet på skuddet – noen ganger er et rolig plassert skudd mer effektivt enn hardt.'] },
+        { name: 'Innhopp fra kant', video: 'llqJgAr1qTE', steps: ['Ta sats fra utsiden av banen med ett eller to steg.','Hopp inn over sidelinja med skuddet klart i luften.','Sikt i det korteste hjørnet (nærmeste i forhold til vinkelen).','Landingen skjer inne på banen – sørg for å lande kontrollert på begge ben.','Øv med og uten forsvarsspiller – bruk finte før hopp hvis forsvar er tett.'] },
+        { name: 'Løpsskudd fra kant', video: 'llqJgAr1qTE', steps: ['Bygg fart langs sidelinja inn mot 6-meteren.','Plukk opp ballen i fullt løp og fortsett inn mot mål.','Skyt fra nær 6-meterslinjen med kroppen i vinkel mot mål.','Bruk kroppens fart til å gi skuddet ekstra kraft.','Tren på å skyte med kort tilløp og med fullt løp – begge varianter.'] },
+        { name: 'Variasjon fra kant', video: 'ktfCUx32QdM', steps: ['Kast inn til strek: når keeper og forsvar fokuserer på deg, finn streker inne.','Pasning tilbake: trekk til deg forsvar og spill tilbake til bakspiller.','Finte inn og skyt: ta ett steg inn på banen og skyt hardt.','Lopp over 6-meteren: utnytt god kroppsposisjon til å legge ballen over keeper.','Øv alle variantene regelmessig slik at keeper og forsvar aldri vet hva som kommer.'] },
+      ]
+    },
+    'Venstre ving': {
+      label: 'Kantspiller', color: '#60a5fa',
+      skills: [
+        { name: 'Skyte kort / langt', video: 'llqJgAr1qTE', steps: ['Kort vinkel: sikt i nærmeste hjørne mellom keeper og stolpe – vær rask og nøyaktig.','Lang vinkel: bruk kroppsfinte for å åpne vinkelen, sikt i det lengste hjørnet.','Hold skuddarmen tett inntil kroppen for å skjule skuddet lengst mulig.','Tren på å skyte fra stillende og etter løp – keeper reagerer annerledes.','Varier hastighet på skuddet – noen ganger er et rolig plassert skudd mer effektivt enn hardt.'] },
+        { name: 'Innhopp fra kant', video: 'llqJgAr1qTE', steps: ['Ta sats fra utsiden av banen med ett eller to steg.','Hopp inn over sidelinja med skuddet klart i luften.','Sikt i det korteste hjørnet (nærmeste i forhold til vinkelen).','Landingen skjer inne på banen – sørg for å lande kontrollert på begge ben.','Øv med og uten forsvarsspiller – bruk finte før hopp hvis forsvar er tett.'] },
+        { name: 'Løpsskudd fra kant', video: 'llqJgAr1qTE', steps: ['Bygg fart langs sidelinja inn mot 6-meteren.','Plukk opp ballen i fullt løp og fortsett inn mot mål.','Skyt fra nær 6-meterslinjen med kroppen i vinkel mot mål.','Bruk kroppens fart til å gi skuddet ekstra kraft.','Tren på å skyte med kort tilløp og med fullt løp – begge varianter.'] },
+        { name: 'Variasjon fra kant', video: 'ktfCUx32QdM', steps: ['Kast inn til strek: når keeper og forsvar fokuserer på deg, finn streker inne.','Pasning tilbake: trekk til deg forsvar og spill tilbake til bakspiller.','Finte inn og skyt: ta ett steg inn på banen og skyt hardt.','Lopp over 6-meteren: utnytt god kroppsposisjon til å legge ballen over keeper.','Øv alle variantene regelmessig slik at keeper og forsvar aldri vet hva som kommer.'] },
+      ]
+    },
+    'Pivotspiller': {
+      label: 'Strekspiller', color: '#fb923c',
+      skills: [
+        { name: 'Plassering og sperre', video: '0XcNeiGi5_Y', steps: ['Finn posisjoner mellom forsvarsspillerne – ikke bak dem.','Sett sperrene med fast stand og kroppen i 90° på forsvarsspilleren som skal sperres.','Hold armer og albuer inntil kroppen under sperren – unngå feil.','Beveg deg aktivt og kontinuerlig for å forstyrre forsvaret og finne luker.','Kommuniser med bakspillere om når du setter sperre.'] },
+        { name: 'Rykk', video: '0XcNeiGi5_Y', steps: ['Start med å stå rolig – lur forsvarsspilleren til å slappe av.','Rykk eksplosivt i én retning med første steg – bruk hele kroppen.','Bruk skulder og hoftefinte for å legge forsvarsspiller på feil ben.','Etter rykket: snu deg raskt mot ballen og gå i skuddsposisjon.','Tren på rykk til begge sider og etter sperre.'] },
+        { name: 'Skuddplassering', video: '0XcNeiGi5_Y', steps: ['Fra 6-meteren: sikt alltid i hjørnene – aldri rett på keeper.','Bruk underarmskudd eller vristkast nær 6-meterslinjen.','Lær å skyte med liten vinkel og kraft fra tett hold.','Tren på å motta og skyte på én bevegelses i fullt fall.','Øv skudd etter 180° vending – kropp bort fra mål, snu og skyt.'] },
+        { name: 'Lobb', video: '0XcNeiGi5_Y', steps: ['Brukes når keeper er langt ute eller har falt – sett ballen over keeper.','Hold ballen høyt og bruk fingertuppene til å legge den mykt over.','Sikt midt i mål eller litt til siden – ikke for hardt.','Tren på å lese keeper sin posisjon raskt og velge lobb i rett øyeblikk.','Kombiner lobb med andre skuddvarianter slik at keeper aldri er sikker.'] },
+      ]
+    },
+    'Midtre bakspiller': {
+      label: 'Bakspiller', color: '#e8fa5b',
+      skills: [
+        { name: 'Hoppskudd fra 9-meter', video: '7rL_lyGhO2Y', steps: ['Ta to–tre hurtige skritt tilløp og hopp av det ytterste beinet.','Grip ballen med skuddhånden i toppen av hoppet – arm bak og albue opp.','Skyt hardt og presist i hjørnet mens du er i luften.','Land kontrollert på begge ben fremfor kroppen.','Tren uten keeper først, deretter med passivt og aktivt forsvar.'] },
+        { name: 'Grunnskudd fra 9-meter', video: 'kI_a2_FfyEE', steps: ['Plasser deg stabilt med foten i skuddsiden noe foran.','Hold ballen i skuddhånden bak øret – albue høyt.','Strekk hele armen og slipp ballen med håndleddsbevegelse (whip).','Sikt lavt i hjørnene – grunnskudd er vanskelig for keeper å nå.','Tren på fart og presisjon – start rolig og øk hastigheten gradvis.'] },
+        { name: 'Underarmskudd', video: 'd_wpoBrLzBU', steps: ['Ta steg inn mot mål og hold ballen under skuddarmen.','Svinge armen nedenfra og slipp ballen med en rask vristbevegelse.','Skuddet går lavt og bratt – sikter under keepers armer.','Brukes gjerne når forsvarsspiller er tett på og blokkerer overarmsskudd.','Tren fra ulike vinkler og avstander – 6, 7 og 9 meter.'] },
+        { name: 'Kringleskudd', video: 'zXb6ssKlnhM', steps: ['Start som om du skal skyte – lur keeper og forsvar.','Ta ett ekstra steg og roter kroppen 360° (kringle) for å unngå blokk.','Slipp skuddet på vei ut av rotasjonen med full armstrekk.','Brukes når forsvarsspilleren blokkerer skuddarmen direkte.','Øv langsomt på rotasjonen, deretter med fart og til slutt med keeper.'] },
+        { name: 'Stegskudd', video: 'qV5zYLhNvB0', steps: ['Ta tre godkjente steg (mottak + 2 steg) inn mot mål i fullt løp.','Hopp av det siste steget og skyt mens du er i luften fremover.','Armsvingen er rask og eksplosiv – bruk hele kroppens fart.','Landingen skjer langt inne på banen – sørg for å lande trygt.','Effektivt mot keeper som ikke har rukket å ta posisjon.'] },
+        { name: 'Høyre–venstre-finte', video: 'xoeQucS7UvA', steps: ['Ta ett tydelig steg til høyre og flytt vekten dit – lur forsvarsspilleren.','Rykk deretter raskt til venstre med eksplosivt første steg.','Hold ballen trygt og ikke vis skuddintensjon for tidlig.','Etter finten: skyt eller drible avhengig av hva forsvaret gjør.','Øv i sakte fart for å lære vektoverføringen, deretter med tempo.'] },
+        { name: 'Venstre–høyre-finte', video: 'xoeQucS7UvA', steps: ['Ta ett tydelig steg til venstre og flytt vekten dit.','Rykk raskt til høyre etter at forsvarsspilleren biter på finten.','Viktig: hele kroppens vekt må flytte seg – ikke bare beina.','Kombiner med blikk og skulderrotasjon for å gjøre finten mer troverdig.','Tren mot passiv og aktiv forsvarsspiller – begge situasjoner kreves i kamp.'] },
+        { name: 'Piruettfinte', video: 'zXb6ssKlnhM', steps: ['Drible inn mot forsvarsspilleren og stopp plutselig.','Roter 360° rundt deg selv bort fra forsvarsspilleren (bakover).','Hold ballen tett inntil kroppen under rotasjonen – ikke mist kontrollen.','Etter rotasjonen er du vendt mot mål og klar til å skyte eller passe.','Tren på rotasjon begge veier – høyre og venstre.'] },
+        { name: 'Overslagsfinte', video: 'xoeQucS7UvA', steps: ['Gjør en tydelig overarmsbevegelse som om du skal skyte – uten å slippe ballen.','Når forsvarsspiller og keeper reagerer: ta ett steg til siden og skyt.','Bruk blikk og skulder til å forsterke finten – se mot et hjørne.','Finten fungerer best på nært hold eller mot en keeper som reagerer raskt.','Øv mot en partner som spiller som keeper, deretter med ekte keeper.'] },
+        { name: 'Dobbelfrosk-finte', video: 'xoeQucS7UvA', steps: ['Gjør to raske skuddfintebevegelsr etter hverandre (opp–opp).','Første bevegelse: arm opp som ved skudd – forsvarsspiller hopper.','Andre bevegelse: ny arm opp – keeper reagerer igjen og er ute av posisjon.','Tredje bevegelse: nå skyter du eller passer til ledig medspiller.','Krev god armkontroll og timing – øv sakte, deretter raskt.'] },
+        { name: 'Skuddfinte / pasningsfinte', video: 'xoeQucS7UvA', steps: ['Gjør en tydelig skuddbevegelse (armsving, blikk mot mål).','Når forsvarsspiller hopper eller keeper reagerer: pass til ledig medspiller.','Alternativt: gjør en tydelig pasningsbevegelse og skyt i stedet.','Krev god øyekontakt med medspillere og god romforståelse.','Øv i kombinasjon med løp fra medspillere slik at finten gir reell verdi.'] },
+      ]
+    },
+    'Høyre back': {
+      label: 'Bakspiller', color: '#e8fa5b',
+      skills: [
+        { name: 'Hoppskudd fra 9-meter', video: '7rL_lyGhO2Y', steps: ['Ta to–tre hurtige skritt tilløp og hopp av det ytterste beinet.','Grip ballen med skuddhånden i toppen av hoppet – arm bak og albue opp.','Skyt hardt og presist i hjørnet mens du er i luften.','Land kontrollert på begge ben fremfor kroppen.','Tren uten keeper først, deretter med passivt og aktivt forsvar.'] },
+        { name: 'Grunnskudd fra 9-meter', video: 'kI_a2_FfyEE', steps: ['Plasser deg stabilt med foten i skuddsiden noe foran.','Hold ballen i skuddhånden bak øret – albue høyt.','Strekk hele armen og slipp ballen med håndleddsbevegelse.','Sikt lavt i hjørnene – grunnskudd er vanskelig for keeper å nå.','Tren på fart og presisjon.'] },
+        { name: 'Underarmskudd', video: 'd_wpoBrLzBU', steps: ['Ta steg inn mot mål og hold ballen under skuddarmen.','Svinge armen nedenfra og slipp ballen med en rask vristbevegelse.','Skuddet går lavt og bratt – sikter under keepers armer.','Brukes gjerne når forsvarsspiller er tett på.','Tren fra ulike vinkler og avstander.'] },
+        { name: 'Høyre–venstre-finte', video: 'xoeQucS7UvA', steps: ['Ta ett tydelig steg til høyre og flytt vekten dit.','Rykk deretter raskt til venstre med eksplosivt første steg.','Hold ballen trygt og ikke vis skuddintensjon for tidlig.','Etter finten: skyt eller drible avhengig av hva forsvaret gjør.','Øv i sakte fart for å lære vektoverføringen, deretter med tempo.'] },
+        { name: 'Venstre–høyre-finte', video: 'xoeQucS7UvA', steps: ['Ta ett tydelig steg til venstre og flytt vekten dit.','Rykk raskt til høyre etter at forsvarsspilleren biter på finten.','Hele kroppens vekt må flytte seg – ikke bare beina.','Kombiner med blikk og skulderrotasjon for troverdighet.','Tren mot passiv og aktiv forsvarsspiller.'] },
+        { name: 'Piruettfinte', video: 'zXb6ssKlnhM', steps: ['Drible inn mot forsvarsspilleren og stopp plutselig.','Roter 360° rundt deg selv bort fra forsvarsspilleren.','Hold ballen tett inntil kroppen under rotasjonen.','Etter rotasjonen er du vendt mot mål og klar til å skyte.','Tren på rotasjon begge veier.'] },
+        { name: 'Stegskudd', video: 'qV5zYLhNvB0', steps: ['Ta tre godkjente steg inn mot mål i fullt løp.','Hopp av det siste steget og skyt mens du er i luften fremover.','Armsvingen er rask og eksplosiv – bruk hele kroppens fart.','Landingen skjer langt inne på banen.','Effektivt mot keeper som ikke har rukket å ta posisjon.'] },
+      ]
+    },
+    'Venstre back': {
+      label: 'Bakspiller', color: '#e8fa5b',
+      skills: [
+        { name: 'Hoppskudd fra 9-meter', video: '7rL_lyGhO2Y', steps: ['Ta to–tre hurtige skritt tilløp og hopp av det ytterste beinet.','Grip ballen med skuddhånden i toppen av hoppet – arm bak og albue opp.','Skyt hardt og presist i hjørnet mens du er i luften.','Land kontrollert på begge ben fremfor kroppen.','Tren uten keeper først, deretter med passivt og aktivt forsvar.'] },
+        { name: 'Grunnskudd fra 9-meter', video: 'kI_a2_FfyEE', steps: ['Plasser deg stabilt med foten i skuddsiden noe foran.','Hold ballen i skuddhånden bak øret – albue høyt.','Strekk hele armen og slipp ballen med håndleddsbevegelse.','Sikt lavt i hjørnene – grunnskudd er vanskelig for keeper å nå.','Tren på fart og presisjon.'] },
+        { name: 'Underarmskudd', video: 'd_wpoBrLzBU', steps: ['Ta steg inn mot mål og hold ballen under skuddarmen.','Svinge armen nedenfra og slipp ballen med en rask vristbevegelse.','Skuddet går lavt og bratt – sikter under keepers armer.','Brukes gjerne når forsvarsspiller er tett på.','Tren fra ulike vinkler og avstander.'] },
+        { name: 'Venstre–høyre-finte', video: 'xoeQucS7UvA', steps: ['Ta ett tydelig steg til venstre og flytt vekten dit.','Rykk raskt til høyre etter at forsvarsspilleren biter på finten.','Hele kroppens vekt må flytte seg – ikke bare beina.','Kombiner med blikk og skulderrotasjon for troverdighet.','Tren mot passiv og aktiv forsvarsspiller.'] },
+        { name: 'Høyre–venstre-finte', video: 'xoeQucS7UvA', steps: ['Ta ett tydelig steg til høyre og flytt vekten dit.','Rykk deretter raskt til venstre med eksplosivt første steg.','Hold ballen trygt og ikke vis skuddintensjon for tidlig.','Etter finten: skyt eller drible.','Øv i sakte fart for å lære vektoverføringen, deretter med tempo.'] },
+        { name: 'Piruettfinte', video: 'zXb6ssKlnhM', steps: ['Drible inn mot forsvarsspilleren og stopp plutselig.','Roter 360° rundt deg selv bort fra forsvarsspilleren.','Hold ballen tett inntil kroppen under rotasjonen.','Etter rotasjonen er du vendt mot mål og klar til å skyte.','Tren på rotasjon begge veier.'] },
+        { name: 'Stegskudd', video: 'qV5zYLhNvB0', steps: ['Ta tre godkjente steg inn mot mål i fullt løp.','Hopp av det siste steget og skyt mens du er i luften fremover.','Bruk hele kroppens fart.','Landingen skjer langt inne på banen.','Effektivt mot keeper som ikke har rukket å ta posisjon.'] },
+      ]
+    },
+    'Playmaker': {
+      label: 'Bakspiller / Playmaker', color: '#a78bfa',
+      skills: [
+        { name: 'Hoppskudd fra 9-meter', video: '7rL_lyGhO2Y', steps: ['Ta to–tre hurtige skritt tilløp og hopp av det ytterste beinet.','Grip ballen med skuddhånden i toppen av hoppet.','Skyt hardt og presist i hjørnet mens du er i luften.','Land kontrollert på begge ben.','Tren uten keeper først, deretter med forsvar.'] },
+        { name: 'Skuddfinte / pasningsfinte', video: 'xoeQucS7UvA', steps: ['Gjør en tydelig skuddbevegelse – forsvarsspiller og keeper reagerer.','Når de reagerer: pass til ledig medspiller.','Alternativt: gjør pasningsbevegelse og skyt.','Krev god øyekontakt med medspillere.','Øv i kombinasjon med løp fra medspillere.'] },
+        { name: 'Høyre–venstre-finte', video: 'xoeQucS7UvA', steps: ['Ta ett tydelig steg til høyre og flytt vekten dit.','Rykk raskt til venstre med eksplosivt første steg.','Hold ballen trygt og skjul intensjonen.','Etter finten: skyt eller pass.','Øv sakte, deretter med tempo.'] },
+        { name: 'Venstre–høyre-finte', video: 'xoeQucS7UvA', steps: ['Ta ett tydelig steg til venstre og flytt vekten dit.','Rykk raskt til høyre etter at forsvarsspilleren biter på finten.','Hele kroppens vekt må flytte seg.','Kombiner med blikk og skulder for troverdighet.','Tren mot passiv og aktiv forsvarsspiller.'] },
+        { name: 'Piruettfinte', video: 'zXb6ssKlnhM', steps: ['Drible inn mot forsvarsspilleren og stopp plutselig.','Roter 360° rundt deg selv.','Hold ballen tett inntil kroppen.','Etter rotasjonen: skyt eller pass.','Tren begge veier.'] },
+        { name: 'Overslagsfinte', video: 'xoeQucS7UvA', steps: ['Gjør tydelig overarmsbevegelse uten å slippe ballen.','Når keeper og forsvar reagerer: ta steg til siden og skyt.','Bruk blikk og skulder for å forsterke finten.','Fungerer best på nært hold.','Øv mot partner, deretter med keeper.'] },
+        { name: 'Dobbelfrosk-finte', video: 'xoeQucS7UvA', steps: ['Gjør to raske skuddfintebevegelsr etter hverandre.','Første: arm opp – forsvar hopper.','Andre: ny arm opp – keeper reagerer og er ute av posisjon.','Tredje: nå skyt eller pass.','Øv sakte, deretter raskt.'] },
+      ]
+    },
+  };
+
+  const PHYSICAL_PLANS = {
+    inSeason: [
+      { type:'Spenst', desc:'2x per uke: Hoppøvelser, trappejump, box jumps (3×10)', days:'Tirsdag, Torsdag' },
+      { type:'Styrke', desc:'1x per uke: Kjerneøvelser, bein, skulder (3×12)', days:'Onsdag' },
+      { type:'Kondisjon', desc:'Intervalltrening 2x 15 min i sesong, ved behov ekstra 30 min rolig løp', days:'Mandag' },
+    ],
+    offSeason: [
+      { type:'Grunnkondisjon', desc:'3x per uke: Rolig jogging 30-40 min', days:'Man, Ons, Fre' },
+      { type:'Styrke', desc:'2x per uke: Fullkroppsøvelse med vekt', days:'Tirsdag, Torsdag' },
+      { type:'Koordinasjon', desc:'1x per uke: Steppøvelser, balanse og plyometri', days:'Lørdag' },
+    ]
+  };
+
+  const positionData = player ? (SKILLS_BY_POSITION[player.position] || SKILLS_BY_POSITION['Midtre bakspiller']) : null;
+  const [expandedSkill, setExpandedSkill] = useState(null);
+
+  function getRelevantSkills(player, posData) {
+    if (!posData) return [];
+    const weaknesses = (player.weaknesses || '').toLowerCase();
+    const notes = (player.notes || '').toLowerCase();
+    const combined = weaknesses + ' ' + notes;
+
+    const KEYWORD_MAP = {
+      'hoppskudd': ['Hoppskudd fra 9-meter'],
+      'hopp': ['Hoppskudd fra 9-meter'],
+      'grunnskudd': ['Grunnskudd fra 9-meter'],
+      'underarmskudd': ['Underarmskudd'],
+      'lav arm': ['Underarmskudd'],
+      'kringleskudd': ['Kringleskudd'],
+      'stegskudd': ['Stegskudd'],
+      'finte': ['Høyre–venstre-finte', 'Venstre–høyre-finte', 'Piruettfinte', 'Overslagsfinte', 'Dobbelfrosk-finte', 'Skuddfinte / pasningsfinte'],
+      'gjennombrudd': ['Høyre–venstre-finte', 'Venstre–høyre-finte', 'Stegskudd', 'Piruettfinte'],
+      'skuddkraft': ['Hoppskudd fra 9-meter', 'Grunnskudd fra 9-meter', 'Stegskudd'],
+      'skuddplassering': ['Grunnskudd fra 9-meter', 'Skuddplassering', 'Skyte kort / langt'],
+      'skudd utenfra': ['Hoppskudd fra 9-meter', 'Grunnskudd fra 9-meter'],
+      'skudd fra 9': ['Hoppskudd fra 9-meter', 'Grunnskudd fra 9-meter'],
+      'skudd nede': ['Underarmskudd', 'Grunnskudd fra 9-meter'],
+      'skyte nede': ['Underarmskudd', 'Grunnskudd fra 9-meter'],
+      'variasjon': ['Variasjon fra kant', 'Skuddfinte / pasningsfinte', 'Overslagsfinte'],
+      'variasjon av skudd': ['Variasjon fra kant', 'Innhopp fra kant', 'Løpsskudd fra kant'],
+      'innhopp': ['Innhopp fra kant'],
+      'kantskudd': ['Skyte kort / langt', 'Løpsskudd fra kant'],
+      'ballkontroll': ['Grunnskudd fra 9-meter'],
+      'tempo': ['Stegskudd', 'Skuddfinte / pasningsfinte'],
+      'trekker seg': ['Utfall ned og oppe', 'Plassering / grunnposisjon'],
+      'opptrekk': ['Langpasninger / igangsetting', 'Forflytning'],
+      '6-meter': ['Utfall ned og oppe', 'Forflytning', 'Plassering / grunnposisjon'],
+      'sperre': ['Plassering og sperre'],
+      'rykk': ['Rykk'],
+      'lobb': ['Lobb'],
+      'skudd': ['Skuddplassering'],
+      'guts': ['Hoppskudd fra 9-meter', 'Stegskudd'],
+      'trampe': ['Stegskudd', 'Hoppskudd fra 9-meter'],
+      'forflytning': ['Forflytning'],
+      'plassering': ['Plassering / grunnposisjon', 'Plassering og sperre'],
+    };
+
+    const matchedNames = new Set();
+    for (const [keyword, skillNames] of Object.entries(KEYWORD_MAP)) {
+      if (combined.includes(keyword)) {
+        skillNames.forEach(s => matchedNames.add(s));
+      }
+    }
+
+    // If no matches found, return all skills for the position
+    const filtered = posData.skills.filter(s => matchedNames.has(s.name));
+    return filtered.length > 0 ? filtered : posData.skills;
+  }
+
+  return (
+    <div>
+      <div className="page-header">
+        <div className="page-title">Individuelle planer</div>
+        <div className="page-sub">Tilpasset treningsopplegg per spiller</div>
+      </div>
+
+      <div style={{marginBottom:'1.25rem'}}>
+        <label className="form-label">Velg spiller</label>
+        <select value={selected} onChange={e=>{setSelected(Number(e.target.value));setExpandedSkill(null);}} style={{maxWidth:260}}>
+          {players.map(p=><option key={p.id} value={p.id}>{p.name} – {p.position}</option>)}
+        </select>
+      </div>
+
+      {player && (
+        <div>
+          <div className="tabs">
+            {['teknikk','styrker','fysisk'].map(t=><button key={t} className={`tab${skillTab===t?' active':''}`} onClick={()=>setSkillTab(t)}>{t.charAt(0).toUpperCase()+t.slice(1)}</button>)}
+          </div>
+
+          {skillTab==='teknikk' && positionData && (
+            <div>
+              {(() => {
+                const relevantSkills = getRelevantSkills(player, positionData);
+                const allSkills = positionData.skills;
+                const isFiltered = relevantSkills.length < allSkills.length;
+                return (
+              <div>
+              <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:'1.25rem',flexWrap:'wrap'}}>
+                <span className="badge" style={{background:positionData.color+'22',color:positionData.color,fontSize:'12px',padding:'4px 12px'}}>{positionData.label}</span>
+                <span style={{fontSize:'13px',color:'var(--text2)'}}>{relevantSkills.length} øvelser tilpasset {player.name}</span>
+                {isFiltered && <span className="badge badge-yellow" style={{fontSize:'10px'}}>Tilpasset svakheter</span>}
+              </div>
+              {relevantSkills.map((skill, si) => (
+                <div key={si} style={{border:'1px solid var(--border)',borderRadius:'var(--radius-sm)',marginBottom:'0.6rem',overflow:'hidden'}}>
+                  <div
+                    onClick={()=>setExpandedSkill(expandedSkill===si?null:si)}
+                    style={{padding:'0.85rem 1rem',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center',background:expandedSkill===si?'var(--bg3)':'var(--bg2)',transition:'background 0.15s'}}
+                  >
+                    <div style={{display:'flex',alignItems:'center',gap:10}}>
+                      <span style={{width:24,height:24,borderRadius:'50%',background:positionData.color+'22',color:positionData.color,fontSize:'11px',fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{si+1}</span>
+                      <span style={{fontWeight:500,fontSize:'14px'}}>{skill.name}</span>
+                    </div>
+                    <span style={{color:'var(--text2)',fontSize:'18px',transform:expandedSkill===si?'rotate(90deg)':'none',transition:'transform 0.2s'}}>›</span>
+                  </div>
+                  {expandedSkill===si && (
+                    <div style={{padding:'1rem',background:'var(--bg)',borderTop:'1px solid var(--border)'}}>
+                      {skill.video && (
+                        <div style={{marginBottom:'1rem',borderRadius:'var(--radius-sm)',overflow:'hidden',background:'#000',position:'relative',paddingTop:'56.25%'}}>
+                          <iframe
+                            src={`https://www.youtube.com/embed/${skill.video}?rel=0&modestbranding=1`}
+                            style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',border:'none'}}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        </div>
+                      )}
+                      {skill.steps.map((step, i) => (
+                        <div key={i} style={{display:'flex',gap:12,marginBottom:'0.75rem',alignItems:'flex-start'}}>
+                          <span style={{width:22,height:22,borderRadius:'50%',background:'var(--bg3)',color:'var(--text2)',fontSize:'11px',fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:1}}>{i+1}</span>
+                          <p style={{fontSize:'13px',lineHeight:1.6,color:'var(--text)',margin:0}}>{step}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+              </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {skillTab==='styrker' && (
+            <div className="grid grid-2">
+              <div className="card">
+                <div className="card-title">Fokusområder</div>
+                <p style={{fontSize:'13px',color:'var(--text2)',marginBottom:'0.75rem'}}>Øv ekstra på disse</p>
+                {(player.weaknesses||'').split(',').map((w,i) => (
+                  <div key={i} style={{display:'flex',alignItems:'center',gap:8,marginBottom:'0.5rem'}}>
+                    <span style={{color:'#fb923c',fontSize:'16px'}}>→</span>
+                    <span style={{fontSize:'14px'}}>{w.trim()}</span>
+                  </div>
+                ))}
+                {!player.weaknesses && <p style={{color:'var(--text2)',fontSize:'13px'}}>Ingen registrert</p>}
+              </div>
+              <div className="card">
+                <div className="card-title">Styrker å bygge på</div>
+                {(player.strengths||'').split(',').map((s,i) => (
+                  <div key={i} style={{display:'flex',alignItems:'center',gap:8,marginBottom:'0.5rem'}}>
+                    <span style={{color:'var(--accent2)',fontSize:'16px'}}>✓</span>
+                    <span style={{fontSize:'14px'}}>{s.trim()}</span>
+                  </div>
+                ))}
+                {!player.strengths && <p style={{color:'var(--text2)',fontSize:'13px'}}>Ingen registrert</p>}
+              </div>
+            </div>
+          )}
+
+          {skillTab==='fysisk' && (
+            <div className="grid grid-2">
+              <div className="card">
+                <div className="card-title">Fysisk trening – I sesong</div>
+                {PHYSICAL_PLANS.inSeason.map((p,i)=>(
+                  <div key={i} style={{marginBottom:'0.85rem'}}>
+                    <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
+                      <span className="badge badge-yellow">{p.type}</span>
+                      <span style={{fontSize:'11px',color:'var(--text2)'}}>{p.days}</span>
+                    </div>
+                    <p style={{fontSize:'13px',color:'var(--text2)'}}>{p.desc}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="card">
+                <div className="card-title">Fysisk trening – Off-sesong</div>
+                {PHYSICAL_PLANS.offSeason.map((p,i)=>(
+                  <div key={i} style={{marginBottom:'0.85rem'}}>
+                    <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
+                      <span className="badge badge-blue">{p.type}</span>
+                      <span style={{fontSize:'11px',color:'var(--text2)'}}>{p.days}</span>
+                    </div>
+                    <p style={{fontSize:'13px',color:'var(--text2)'}}>{p.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SeasonPlan() {
+  const colors = { physical:'badge-green', skill:'badge-yellow', tactical:'badge-blue', mixed:'badge-gray', evaluation:'badge-red' };
+  const labels = { physical:'Fysisk', skill:'Teknikk', tactical:'Taktikk', mixed:'Blanding', evaluation:'Evaluering' };
+
+  return (
+    <div>
+      <div className="page-header">
+        <div className="page-title">Sesongplan 2025</div>
+        <div className="page-sub">Mai 2025 – Mai 2026 · Mål: vinne serien og regionalt sluttspill</div>
+      </div>
+
+      <div style={{position:'relative'}}>
+        <div style={{position:'absolute',left:99,top:0,bottom:0,width:2,background:'var(--border)',borderRadius:1}}></div>
+
+        {SEASON_PLAN.map((m, i) => (
+          <div key={i} style={{display:'flex',gap:'1.5rem',marginBottom:'1.25rem',position:'relative'}}>
+            <div style={{minWidth:90,fontWeight:600,fontSize:'13px',paddingTop:14,textAlign:'right',color:'var(--text2)',flexShrink:0}}>{m.month}</div>
+
+            <div style={{width:12,height:12,borderRadius:'50%',background:m.events&&m.events.length?'var(--accent)':'var(--bg3)',border:'2px solid var(--border)',flexShrink:0,marginTop:16,zIndex:1}}></div>
+
+            <div style={{flex:1,background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'var(--radius-sm)',padding:'0.85rem 1rem',marginBottom:0}}>
+              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8,flexWrap:'wrap'}}>
+                <span style={{fontWeight:600,fontSize:'14px'}}>{m.phase}</span>
+                <span className={`badge ${colors[m.type]}`} style={{fontSize:'10px'}}>{labels[m.type]}</span>
+              </div>
+
+              {m.events && m.events.length > 0 && (
+                <div style={{marginBottom:10}}>
+                  {m.events.map((ev,ei) => (
+                    <div key={ei} style={{padding:'6px 10px',borderRadius:6,background:ev.color+'18',border:`1px solid ${ev.color}44`,marginBottom:6}}>
+                      <div style={{fontWeight:600,fontSize:'13px',color:ev.color,marginBottom:2}}>{ev.label}</div>
+                      <div style={{fontSize:'12px',color:'var(--text2)'}}>{ev.desc}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:m.note?8:0}}>
+                {m.focus.map((f,j)=><span key={j} className="badge badge-gray" style={{fontSize:'11px'}}>{f}</span>)}
+              </div>
+
+              {m.note && (
+                <div style={{fontSize:'12px',color:'var(--text2)',marginTop:8,paddingTop:8,borderTop:'1px solid var(--border)',fontStyle:'italic'}}>{m.note}</div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MasteryLog({ players, mastery, setMastery }) {
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({ player_id: players[0]?.id, date: new Date().toISOString().split('T')[0], skill: SKILLS[0], note: '', coach: '' });
+
+  function save() {
+    setMastery(ms => [...ms, {...form, id: Date.now(), player_id: Number(form.player_id)}]);
+    setShowModal(false);
+  }
+
+  return (
+    <div>
+      <div className="page-header" style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+        <div>
+          <div className="page-title">Mestringslogg 🏆</div>
+          <div className="page-sub">Feir fremgangen til spillerne</div>
+        </div>
+        <button className="btn btn-primary" onClick={()=>setShowModal(true)}>+ Ny mestring</button>
+      </div>
+
+      {mastery.length === 0 && <p style={{color:'var(--text2)',fontSize:'14px'}}>Ingen mestringsregistreringer ennå. Legg til den første!</p>}
+
+      {[...mastery].reverse().map(m => {
+        const p = players.find(pl=>pl.id===m.player_id);
+        return (
+          <div key={m.id} className="mastery-card">
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
+              {p && getAvatar(p.name, p.avatar_color)}
+              <div>
+                <div style={{fontWeight:500,fontSize:'14px'}}>{p?.name}</div>
+                <div style={{fontSize:'11px',color:'var(--text2)'}}>{p?.position}</div>
+              </div>
+              <span className="badge badge-green" style={{marginLeft:'auto'}}>{m.skill}</span>
+              <span style={{fontSize:'11px',color:'var(--text2)'}}>{formatDate(m.date)}</span>
+            </div>
+            <p style={{fontSize:'14px',lineHeight:1.5}}>{m.note}</p>
+            <p style={{fontSize:'12px',color:'var(--text2)',marginTop:6}}>— {m.coach}</p>
+          </div>
+        );
+      })}
+
+      {showModal && (
+        <div className="modal-overlay" onClick={()=>setShowModal(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title">Registrer mestring</div>
+              <button className="btn btn-ghost btn-sm" onClick={()=>setShowModal(false)}>×</button>
+            </div>
+            <div className="form-group"><label className="form-label">Spiller</label>
+              <select value={form.player_id} onChange={e=>setForm({...form,player_id:e.target.value})}>
+                {players.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+            <div className="grid grid-2">
+              <div className="form-group"><label className="form-label">Dato</label><input type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} /></div>
+              <div className="form-group"><label className="form-label">Ferdighet</label>
+                <select value={form.skill} onChange={e=>setForm({...form,skill:e.target.value})}>
+                  {SKILLS.map(s=><option key={s}>{s}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="form-group"><label className="form-label">Beskriv mestring</label><textarea rows={3} value={form.note} onChange={e=>setForm({...form,note:e.target.value})} placeholder="Hva gjorde spilleren bra? Vær konkret og positiv!" /></div>
+            <div className="form-group"><label className="form-label">Registrert av (trener)</label><input value={form.coach} onChange={e=>setForm({...form,coach:e.target.value})} placeholder="Ditt navn" /></div>
+            <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
+              <button className="btn btn-ghost" onClick={()=>setShowModal(false)}>Avbryt</button>
+              <button className="btn btn-primary" onClick={save}>Lagre</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InjuryLog({ players, injuries, setInjuries }) {
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({ player_id: players[0]?.id, date: new Date().toISOString().split('T')[0], type: '', status: 'aktiv', description: '', return_date: '' });
+
+  function save() {
+    setInjuries(inj => [...inj, {...form, id: Date.now(), player_id: Number(form.player_id)}]);
+    setShowModal(false);
+  }
+
+  function toggle(id) {
+    setInjuries(inj => inj.map(i => i.id===id ? {...i, status: i.status==='aktiv'?'tilbake':'aktiv'} : i));
+  }
+
+  const active = injuries.filter(i=>i.status==='aktiv');
+  const recovered = injuries.filter(i=>i.status==='tilbake');
+
+  return (
+    <div>
+      <div className="page-header" style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+        <div>
+          <div className="page-title">Skadelogg</div>
+          <div className="page-sub">{active.length} aktive skader</div>
+        </div>
+        <button className="btn btn-primary" onClick={()=>setShowModal(true)}>+ Registrer skade</button>
+      </div>
+
+      {active.length > 0 && (
+        <div style={{marginBottom:'1.5rem'}}>
+          <div className="card-title" style={{marginBottom:'0.75rem',color:'#f87171'}}>Aktive skader</div>
+          {active.map(i => {
+            const p = players.find(pl=>pl.id===i.player_id);
+            return (
+              <div key={i.id} className="injury-card">
+                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
+                  {p && getAvatar(p.name, p.avatar_color)}
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:500,fontSize:'14px'}}>{p?.name}</div>
+                    <div style={{fontSize:'12px',color:'var(--text2)'}}>{i.type}</div>
+                  </div>
+                  <span className="badge badge-red">Aktiv</span>
+                  <button className="btn btn-ghost btn-sm" onClick={()=>toggle(i.id)}>Tilbake ✓</button>
+                </div>
+                <p style={{fontSize:'13px',color:'var(--text2)'}}>{i.description}</p>
+                {i.return_date && <p style={{fontSize:'12px',color:'var(--text2)',marginTop:4}}>Forventet tilbake: {formatDate(i.return_date)}</p>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {recovered.length > 0 && (
+        <div>
+          <div className="card-title" style={{marginBottom:'0.75rem'}}>Tilbake etter skade</div>
+          {recovered.map(i => {
+            const p = players.find(pl=>pl.id===i.player_id);
+            return (
+              <div key={i.id} style={{padding:'0.75rem',borderRadius:'var(--radius-sm)',border:'1px solid var(--border)',marginBottom:'0.5rem',opacity:0.7}}>
+                <div style={{display:'flex',alignItems:'center',gap:10}}>
+                  {p && getAvatar(p.name, p.avatar_color)}
+                  <div style={{flex:1}}>
+                    <span style={{fontSize:'14px',fontWeight:500}}>{p?.name}</span>
+                    <span style={{fontSize:'13px',color:'var(--text2)',marginLeft:8}}>{i.type}</span>
+                  </div>
+                  <span className="badge badge-green">Tilbake</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {injuries.length === 0 && <p style={{color:'var(--text2)',fontSize:'14px'}}>Ingen skader registrert 👍</p>}
+
+      {showModal && (
+        <div className="modal-overlay" onClick={()=>setShowModal(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title">Registrer skade</div>
+              <button className="btn btn-ghost btn-sm" onClick={()=>setShowModal(false)}>×</button>
+            </div>
+            <div className="form-group"><label className="form-label">Spiller</label>
+              <select value={form.player_id} onChange={e=>setForm({...form,player_id:e.target.value})}>
+                {players.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+            <div className="grid grid-2">
+              <div className="form-group"><label className="form-label">Dato</label><input type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} /></div>
+              <div className="form-group"><label className="form-label">Skadestype</label><input value={form.type} onChange={e=>setForm({...form,type:e.target.value})} placeholder="f.eks. Ankelvrikk" /></div>
+            </div>
+            <div className="form-group"><label className="form-label">Beskrivelse</label><textarea rows={2} value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="Hva skjedde?" /></div>
+            <div className="form-group"><label className="form-label">Forventet tilbake (dato)</label><input type="date" value={form.return_date} onChange={e=>setForm({...form,return_date:e.target.value})} /></div>
+            <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
+              <button className="btn btn-ghost" onClick={()=>setShowModal(false)}>Avbryt</button>
+              <button className="btn btn-primary" onClick={save}>Lagre</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Messages({ players, messages, setMessages }) {
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({ to:'all', text: '' });
+
+  function send() {
+    if (!form.text.trim()) return;
+    setMessages(ms => [...ms, { id: Date.now(), from: 'Trener', to: form.to==='all'?'all': Number(form.to), text: form.text, date: new Date().toISOString().split('T')[0], read: true }]);
+    setShowModal(false);
+    setForm({ to:'all', text:'' });
+  }
+
+  return (
+    <div>
+      <div className="page-header" style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+        <div>
+          <div className="page-title">Beskjeder</div>
+          <div className="page-sub">Felles og individuelle meldinger</div>
+        </div>
+        <button className="btn btn-primary" onClick={()=>setShowModal(true)}>+ Ny beskjed</button>
+      </div>
+
+      <div>
+        {[...messages].reverse().map(m => {
+          const recipient = m.to==='all' ? null : players.find(p=>p.id===m.to);
+          return (
+            <div key={m.id} style={{padding:'1rem',border:'1px solid var(--border)',borderRadius:'var(--radius-sm)',marginBottom:'0.75rem',background:m.read?'var(--bg2)':'var(--bg3)'}}>
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <span style={{fontSize:'13px',fontWeight:500}}>{m.from}</span>
+                  <span style={{fontSize:'12px',color:'var(--text2)'}}>→</span>
+                  {m.to==='all'
+                    ? <span className="badge badge-yellow">Alle spillere</span>
+                    : recipient ? <div style={{display:'flex',alignItems:'center',gap:6}}>{getAvatar(recipient.name, recipient.avatar_color)}<span style={{fontSize:'13px'}}>{recipient.name}</span></div> : null
+                  }
+                </div>
+                <span style={{fontSize:'12px',color:'var(--text2)'}}>{formatDate(m.date)}</span>
+              </div>
+              <p style={{fontSize:'14px',lineHeight:1.6}}>{m.text}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {showModal && (
+        <div className="modal-overlay" onClick={()=>setShowModal(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title">Send beskjed</div>
+              <button className="btn btn-ghost btn-sm" onClick={()=>setShowModal(false)}>×</button>
+            </div>
+            <div className="form-group"><label className="form-label">Mottaker</label>
+              <select value={form.to} onChange={e=>setForm({...form,to:e.target.value})}>
+                <option value="all">📢 Alle spillere</option>
+                {players.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+            <div className="form-group"><label className="form-label">Melding</label><textarea rows={4} value={form.text} onChange={e=>setForm({...form,text:e.target.value})} placeholder="Skriv din beskjed her..." /></div>
+            <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
+              <button className="btn btn-ghost" onClick={()=>setShowModal(false)}>Avbryt</button>
+              <button className="btn btn-primary" onClick={send}>Send</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AIChat({ players }) {
+  const COACHES = [
+    { id: 'kari', name: 'Trener Kari', role: 'Teknisk trener – fokus på individuelle ferdigheter', color: '#e8fa5b' },
+    { id: 'ane', name: 'Trener Ane', role: 'Taktisk trener – forsvar og lagtaktikk', color: '#4ade80' },
+    { id: 'per', name: 'Trener Per', role: 'Fysisk trener – kondisjon og styrke', color: '#60a5fa' },
+  ];
+
+  const [selectedCoach, setSelectedCoach] = useState(COACHES[0]);
+  const [messages, setMessages] = useState([
+    { role: 'assistant', text: `Hei! Jeg er ${COACHES[0].name}. ${COACHES[0].role}. Hva lurer du på?` }
+  ]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const endRef = useRef(null);
+
+  useEffect(() => { endRef.current?.scrollIntoView({behavior:'smooth'}); }, [messages]);
+
+  async function sendMessage() {
+    if (!input.trim() || loading) return;
+    const userMsg = input.trim();
+    setInput('');
+    setMessages(ms => [...ms, { role:'user', text: userMsg }]);
+    setLoading(true);
+
+    try {
+      const systemPrompt = `Du er ${selectedCoach.name}, en håndballtrener for et jenter 13-lag. ${selectedCoach.role}. 
+      Svar på norsk, vær engasjerende, konkret og støttende. Gi praktiske råd tilpasset 13-åringer.
+      Spillere på laget: ${players.map(p=>p.name+' ('+p.position+')').join(', ')}.`;
+
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: systemPrompt,
+          messages: [
+            ...messages.filter(m=>m.role!=='assistant'||messages.indexOf(m)>0).map(m=>({ role: m.role==='user'?'user':'assistant', content: m.text })),
+            { role: 'user', content: userMsg }
+          ]
+        })
+      });
+      const data = await res.json();
+      const reply = data.content?.[0]?.text || 'Beklager, noe gikk galt.';
+      setMessages(ms => [...ms, { role:'assistant', text: reply }]);
+    } catch(e) {
+      setMessages(ms => [...ms, { role:'assistant', text: 'Klarte ikke koble til AI. Sjekk internettforbindelsen.' }]);
+    }
+    setLoading(false);
+  }
+
+  function switchCoach(coach) {
+    setSelectedCoach(coach);
+    setMessages([{ role:'assistant', text: `Hei! Jeg er ${coach.name}. ${coach.role}. Hva lurer du på?` }]);
+  }
+
+  return (
+    <div>
+      <div className="page-header">
+        <div className="page-title">AI-chat med trenere</div>
+        <div className="page-sub">Still spørsmål til trener-AI</div>
+      </div>
+
+      <div style={{display:'flex',gap:'0.75rem',marginBottom:'1.25rem'}}>
+        {COACHES.map(c => (
+          <button key={c.id} onClick={()=>switchCoach(c)} style={{
+            padding:'0.6rem 1rem',borderRadius:'var(--radius-sm)',cursor:'pointer',
+            background: selectedCoach.id===c.id ? c.color+'22' : 'var(--bg2)',
+            border: `1px solid ${selectedCoach.id===c.id ? c.color+'66' : 'var(--border)'}`,
+            color: selectedCoach.id===c.id ? c.color : 'var(--text2)',
+            fontFamily:'DM Sans,sans-serif', fontSize:'13px', fontWeight:500,
+            transition:'all 0.15s'
+          }}>
+            {c.name}
+          </button>
+        ))}
+      </div>
+
+      <div className="card" style={{padding:'1rem'}}>
+        <div className="chat-window">
+          <div className="chat-messages">
+            {messages.map((m,i) => (
+              <div key={i} style={{display:'flex', flexDirection:'column', alignItems: m.role==='user'?'flex-end':'flex-start'}}>
+                {m.role==='assistant' && <div style={{fontSize:'11px',color:'var(--text2)',marginBottom:4,paddingLeft:4}}>{selectedCoach.name}</div>}
+                <div className={`msg-bubble ${m.role==='user'?'sent':'received'}`}>{m.text}</div>
+              </div>
+            ))}
+            {loading && (
+              <div style={{display:'flex',flexDirection:'column',alignItems:'flex-start'}}>
+                <div className="msg-bubble received" style={{color:'var(--text2)'}}>Skriver...</div>
+              </div>
+            )}
+            <div ref={endRef}></div>
+          </div>
+          <div className="chat-input-row">
+            <input
+              value={input}
+              onChange={e=>setInput(e.target.value)}
+              onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}}
+              placeholder={`Spør ${selectedCoach.name}...`}
+            />
+            <button className="btn btn-primary" onClick={sendMessage} disabled={loading}>Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---- SUPABASE HOOKS ----
+function useSupabaseData() {
+  const [players, setPlayersState] = React.useState(MOCK_PLAYERS);
+  const [trainings, setTrainingsState] = React.useState(MOCK_TRAININGS);
+  const [mastery, setMasteryState] = React.useState(MOCK_MASTERY);
+  const [injuries, setInjuriesState] = React.useState(MOCK_INJURIES);
+  const [messages, setMessagesState] = React.useState([
+    { id:1, from:'Trener Kari', to:'all', text:'Husk ekstra treningsøkt fredag kl 17:00 på Gimle. Ta med vannflaske og innesko!', date:'2025-01-14', read: true },
+    { id:2, from:'Trener Ane', to:1, text:'Emma – kjempebra jobb på treningen i dag! Underarmskuddet ditt har utviklet seg veldig!', date:'2025-01-13', read: false },
+  ]);
+  const [dbReady, setDbReady] = React.useState(false);
+  const [dbError, setDbError] = React.useState(null);
+
+  React.useEffect(() => {
+    async function load() {
+      if (!supabase) return;
+      try {
+        const [p, t, m, i, msg] = await Promise.all([
+          supabase.from('players').select('*').order('name'),
+          supabase.from('trainings').select('*').order('date', {ascending:false}),
+          supabase.from('mastery').select('*').order('date', {ascending:false}),
+          supabase.from('injuries').select('*').order('date', {ascending:false}),
+          supabase.from('messages').select('*').order('date', {ascending:false}),
+        ]);
+        if (p.error) throw p.error;
+        if (p.data && p.data.length > 0) setPlayersState(p.data);
+        if (t.data && t.data.length > 0) setTrainingsState(t.data);
+        if (m.data && m.data.length > 0) setMasteryState(m.data);
+        if (i.data && i.data.length > 0) setInjuriesState(i.data);
+        if (msg.data && msg.data.length > 0) setMessagesState(msg.data);
+        setDbReady(true);
+      } catch(e) {
+        setDbError('Bruker demo-data. Kjør SQL-oppsettet i Supabase for å aktivere lagring.');
+      }
+    }
+    load();
+  }, []);
+
+  async function setPlayers(updater) {
+    const next = typeof updater === 'function' ? updater(players) : updater;
+    setPlayersState(next);
+    if (!dbReady) return;
+    const added = next.filter(n => !players.find(p=>p.id===n.id));
+    const updated = next.filter(n => players.find(p=>p.id===n.id && JSON.stringify(p)!==JSON.stringify(n)));
+    const removed = players.filter(p => !next.find(n=>n.id===p.id));
+    for (const p of added) { const {id,...rest}=p; await supabase.from('players').insert(rest); }
+    for (const p of updated) { const {id,...rest}=p; await supabase.from('players').update(rest).eq('id',id); }
+    for (const p of removed) { await supabase.from('players').delete().eq('id',p.id); }
+  }
+
+  async function setTrainings(updater) {
+    const next = typeof updater === 'function' ? updater(trainings) : updater;
+    setTrainingsState(next);
+    if (!dbReady) return;
+    const added = next.filter(n => !trainings.find(t=>t.id===n.id));
+    for (const t of added) { const {id,...rest}=t; await supabase.from('trainings').insert(rest); }
+  }
+
+  async function setMastery(updater) {
+    const next = typeof updater === 'function' ? updater(mastery) : updater;
+    setMasteryState(next);
+    if (!dbReady) return;
+    const added = next.filter(n => !mastery.find(m=>m.id===n.id));
+    for (const m of added) { const {id,...rest}=m; await supabase.from('mastery').insert(rest); }
+  }
+
+  async function setInjuries(updater) {
+    const next = typeof updater === 'function' ? updater(injuries) : updater;
+    setInjuriesState(next);
+    if (!dbReady) return;
+    const added = next.filter(n => !injuries.find(i=>i.id===n.id));
+    const updated = next.filter(n => injuries.find(i=>i.id===n.id && JSON.stringify(i)!==JSON.stringify(n)));
+    for (const i of added) { const {id,...rest}=i; await supabase.from('injuries').insert(rest); }
+    for (const i of updated) { const {id,...rest}=i; await supabase.from('injuries').update(rest).eq('id',id); }
+  }
+
+  async function setMessages(updater) {
+    const next = typeof updater === 'function' ? updater(messages) : updater;
+    setMessagesState(next);
+    if (!dbReady) return;
+    const added = next.filter(n => !messages.find(m=>m.id===n.id));
+    for (const m of added) { const {id,...rest}=m; await supabase.from('messages').insert(rest); }
+  }
+
+  return { players, setPlayers, trainings, setTrainings, mastery, setMastery, injuries, setInjuries, messages, setMessages, dbReady, dbError };
+}
+
+// ---- MAIN APP ----
+function App() {
+  const [page, setPage] = useState('dashboard');
+  const { players, setPlayers, trainings, setTrainings, mastery, setMastery, injuries, setInjuries, messages, setMessages, dbReady, dbError } = useSupabaseData();
+
+  const NAV = [
+    { id:'dashboard', label:'Oversikt', icon:'🏠' },
+    { id:'players', label:'Spillere', icon:'👤' },
+    { id:'attendance', label:'Oppmøte', icon:'📋' },
+    { id:'plans', label:'Individuelle planer', icon:'🎯' },
+    { id:'season', label:'Sesongplan', icon:'📅' },
+    { id:'mastery', label:'Mestringslogg', icon:'🏆' },
+    { id:'injuries', label:'Skadelogg', icon:'🩹' },
+    { id:'messages', label:'Beskjeder', icon:'💬' },
+    { id:'ai', label:'AI-trener chat', icon:'🤖' },
+    { id:'setup', label:'Supabase oppsett', icon:'⚙️' },
+    { id:'physical', label:'Fysisk trening', icon:'💪' },
+  ];
+
+  return (
+    <div id="root">
+      <div className="sidebar">
+        <div className="logo">
+          <div className="logo-icon">🤾‍♀️</div>
+          <div>
+            <div className="logo-text">Håndball</div>
+            <div className="logo-sub" style={{display:'flex',alignItems:'center',gap:4}}>
+              Jenter 13
+              <span style={{width:6,height:6,borderRadius:'50%',background:dbReady?'var(--accent2)':'#f87171',display:'inline-block',marginLeft:4}}></span>
+            </div>
+          </div>
+        </div>
+
+        {NAV.map(n => (
+          <button key={n.id} className={`nav-item${page===n.id?' active':''}`} onClick={()=>setPage(n.id)}>
+            <span className="icon">{n.icon}</span>
+            <span>{n.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="main">
+        {dbError && page!=='setup' && (
+          <div style={{background:'rgba(232,250,91,0.08)',border:'1px solid rgba(232,250,91,0.2)',borderRadius:'var(--radius-sm)',padding:'0.6rem 1rem',marginBottom:'1rem',fontSize:'13px',color:'var(--accent)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <span>⚠️ {dbError}</span>
+            <button className="btn btn-ghost btn-sm" onClick={()=>setPage('setup')}>Sett opp database →</button>
+          </div>
+        )}
+        {page==='dashboard' && <Dashboard players={players} trainings={trainings} mastery={mastery} injuries={injuries} />}
+        {page==='players' && <Players players={players} setPlayers={setPlayers} mastery={mastery} injuries={injuries} />}
+        {page==='attendance' && <Attendance players={players} trainings={trainings} setTrainings={setTrainings} />}
+        {page==='plans' && <IndividualPlans players={players} />}
+        {page==='season' && <SeasonPlan />}
+        {page==='mastery' && <MasteryLog players={players} mastery={mastery} setMastery={setMastery} />}
+        {page==='injuries' && <InjuryLog players={players} injuries={injuries} setInjuries={setInjuries} />}
+        {page==='messages' && <Messages players={players} messages={messages} setMessages={setMessages} />}
+        {page==='ai' && <AIChat players={players} />}
+        {page==='setup' && <SetupPage dbReady={dbReady} />}
+        {page==='physical' && <PhysicalTraining />}
+      </div>
+    </div>
+  );
+}
+
+// ---- PHYSICAL TRAINING ----
+const STRENGTH_EXERCISES = [
+  {
+    id: 1, name: 'Push-up', category: 'Overkropp',
+    muscles: ['Brystmuskel (pectoralis)', 'Skulder (deltoid)', 'Triceps'],
+    how: 'Start i plankeposisjon med hendene skulderbredde fra hverandre. Senk brystet mot gulvet med rett kropp, albuer 45° ut fra siden. Trykk deg opp igjen til armene er nesten strake.',
+    reps: '3 × 10–15',
+    handball: 'Bygger kastekraft og stabilitet i skulder og bryst – direkte overførbart til skuddkraft.',
+    injury: 'Styrker rotatormansjetten og stabiliserer skulderleddet, noe som reduserer skaderisiko ved kasting.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <!-- Ground -->
+      <line x1="10" y1="85" x2="190" y2="85" stroke="#444" stroke-width="1.5"/>
+      <!-- Body plank position -->
+      <ellipse cx="160" cy="38" rx="10" ry="10" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="160" y1="48" x2="110" y2="60" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="110" y1="60" x2="60" y2="68" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="60" y1="68" x2="40" y2="85" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="110" y1="60" x2="100" y2="85" stroke="#e8fa5b" stroke-width="2"/>
+      <!-- Arms down -->
+      <line x1="135" y1="54" x2="130" y2="78" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="135" y1="54" x2="90" y2="70" stroke="#e8fa5b" stroke-width="2"/>
+      <circle cx="130" cy="80" r="3" fill="#e8fa5b"/>
+      <circle cx="90" cy="72" r="3" fill="#e8fa5b"/>
+      <!-- Arrow down -->
+      <path d="M155 60 L155 72 L150 68 M155 72 L160 68" stroke="#4ade80" stroke-width="1.5" fill="none"/>
+      <text x="100" y="98" fill="#8b8fa8" font-size="8" text-anchor="middle">Senk kontrollert – trykk opp</text>
+    </svg>`
+  },
+  {
+    id: 2, name: 'Push-up med bred grep', category: 'Overkropp',
+    muscles: ['Brystmuskel (indre del)', 'Skulder', 'Triceps'],
+    how: 'Som vanlig push-up, men hendene plasseres dobbelt skulderbredde fra hverandre. Albuer peker mer ut til siden. Senk sakte og pres opp.',
+    reps: '3 × 8–12',
+    handball: 'Aktiverer indre brystmuskel mer – viktig for det kraftige bevegelsesuttaket i avslutninger.',
+    injury: 'Bredere grep gir bedre belastning på brystet og avlaster skulderen noe sammenlignet med smalt grep.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <line x1="10" y1="85" x2="190" y2="85" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="155" cy="35" rx="10" ry="10" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="155" y1="45" x2="110" y2="58" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="110" y1="58" x2="65" y2="68" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="65" y1="68" x2="45" y2="85" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="110" y1="58" x2="105" y2="85" stroke="#e8fa5b" stroke-width="2"/>
+      <!-- Wide arms -->
+      <line x1="128" y1="52" x2="158" y2="72" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="128" y1="52" x2="72" y2="72" stroke="#e8fa5b" stroke-width="2"/>
+      <circle cx="158" cy="74" r="3" fill="#e8fa5b"/>
+      <circle cx="72" cy="74" r="3" fill="#e8fa5b"/>
+      <text x="100" y="98" fill="#8b8fa8" font-size="8" text-anchor="middle">Brede hender – mer bryst</text>
+    </svg>`
+  },
+  {
+    id: 3, name: 'Triceps dips (på stol)', category: 'Overkropp',
+    muscles: ['Triceps', 'Skulder (fremre del)', 'Bryst (nedre del)'],
+    how: 'Sett hendene på kanten av en stol bak deg, bena strake fremover. Senk kroppen ned ved å bøye albuene til 90°, hold ryggen nær stolen. Press opp igjen.',
+    reps: '3 × 10–15',
+    handball: 'Triceps er kritisk for den siste fasen av kastebevegelsen – den "whip"-en som gir ballen fart.',
+    injury: 'Styrker albueled og senene rundt det, og forebygger tricepstendinopati som er vanlig blant kastere.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <rect x="120" y="55" width="60" height="12" rx="3" fill="#333" stroke="#555" stroke-width="1"/>
+      <line x1="120" y1="67" x2="120" y2="85" stroke="#555" stroke-width="2"/>
+      <line x1="180" y1="67" x2="180" y2="85" stroke="#555" stroke-width="2"/>
+      <line x1="10" y1="85" x2="190" y2="85" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="105" cy="42" rx="10" ry="10" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="105" y1="52" x2="120" y2="62" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="120" y1="62" x2="100" y2="85" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="85" x2="60" y2="85" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="115" y1="58" x2="128" y2="62" stroke="#e8fa5b" stroke-width="2"/>
+      <circle cx="128" cy="62" r="3" fill="#e8fa5b"/>
+      <path d="M108 52 L108 65" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="3,2"/>
+      <text x="70" y="98" fill="#8b8fa8" font-size="8" text-anchor="middle">Bøy albuer til 90°</text>
+    </svg>`
+  },
+  {
+    id: 4, name: 'Knebøy (kroppsvekt)', category: 'Ben',
+    muscles: ['Quadriceps', 'Gluteus (setemuskel)', 'Hamstrings', 'Leggmuskel'],
+    how: 'Stå med bena litt bredere enn hoftebredde, tær peker 15–30° ut. Senk deg ned som om du skal sette deg på en stol – knærne følger tærne. Gå ned til lårene er parallelle med gulvet. Press opp gjennom hælene.',
+    reps: '3 × 15–20',
+    handball: 'Det viktigste beinstyrkeøvelsen for håndball – brukes i sats til hoppskudd, forsvarsbevegelser og eksplosive rykk.',
+    injury: 'Styrker knestabilisatorene og reduserer ACL-skaderisiko som er svært vanlig i håndball.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <line x1="10" y1="88" x2="190" y2="88" stroke="#444" stroke-width="1.5"/>
+      <!-- Standing figure left -->
+      <ellipse cx="60" cy="18" rx="9" ry="9" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="60" y1="27" x2="60" y2="55" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="60" y1="55" x2="48" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="60" y1="55" x2="72" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="60" y1="35" x2="45" y2="48" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="60" y1="35" x2="75" y2="48" stroke="#e8fa5b" stroke-width="2"/>
+      <!-- Squat figure right -->
+      <ellipse cx="145" cy="25" rx="9" ry="9" fill="none" stroke="#4ade80" stroke-width="2"/>
+      <line x1="145" y1="34" x2="145" y2="58" stroke="#4ade80" stroke-width="2.5"/>
+      <line x1="145" y1="58" x2="125" y2="75" stroke="#4ade80" stroke-width="2"/>
+      <line x1="125" y1="75" x2="118" y2="88" stroke="#4ade80" stroke-width="2"/>
+      <line x1="145" y1="58" x2="165" y2="75" stroke="#4ade80" stroke-width="2"/>
+      <line x1="165" y1="75" x2="172" y2="88" stroke="#4ade80" stroke-width="2"/>
+      <line x1="145" y1="42" x2="125" y2="52" stroke="#4ade80" stroke-width="2"/>
+      <line x1="145" y1="42" x2="165" y2="52" stroke="#4ade80" stroke-width="2"/>
+      <path d="M95 50 L110 50" stroke="#888" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="100" y="98" fill="#8b8fa8" font-size="8" text-anchor="middle">Knær følger tærne – rett rygg</text>
+    </svg>`
+  },
+  {
+    id: 5, name: 'Utfall fremover', category: 'Ben',
+    muscles: ['Quadriceps', 'Gluteus', 'Hamstrings', 'Kjernemuskulatur'],
+    how: 'Ta et stort skritt fremover, senk bakkneet ned mot gulvet til begge knær er i 90°. Fremkneet skal ikke gå forbi tåen. Press opp tilbake til startposisjon med fremfoten. Bytt ben.',
+    reps: '3 × 10 per ben',
+    handball: 'Treffer ensidelig belastning på bena – likt det du opplever i satssteget før hoppskudd og i forsvarsbevegelser.',
+    injury: 'Forbedrer kne- og hoftebalanse og reduserer risiko for lyskeskader og kneproblemer.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <line x1="10" y1="88" x2="190" y2="88" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="100" cy="18" rx="9" ry="9" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="27" x2="100" y2="52" stroke="#e8fa5b" stroke-width="2.5"/>
+      <!-- Front leg -->
+      <line x1="100" y1="52" x2="140" y2="68" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="140" y1="68" x2="145" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <!-- Back leg -->
+      <line x1="100" y1="52" x2="75" y2="72" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="75" y1="72" x2="78" y2="88" stroke="#4ade80" stroke-width="2"/>
+      <circle cx="75" cy="74" r="4" fill="none" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="2,2"/>
+      <!-- Arms -->
+      <line x1="100" y1="35" x2="80" y2="50" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="35" x2="120" y2="50" stroke="#e8fa5b" stroke-width="2"/>
+      <text x="100" y="98" fill="#8b8fa8" font-size="8" text-anchor="middle">90° i begge knær – rett overkropp</text>
+    </svg>`
+  },
+  {
+    id: 6, name: 'Bulgarsk utfall', category: 'Ben',
+    muscles: ['Quadriceps', 'Gluteus', 'Kjernemuskulatur', 'Balanse'],
+    how: 'Plasser bakfoten på en stol/kasse bak deg. Det fremste benet bærer vekten. Senk hoften ned til fremkneet er i 90°. Hold ryggen rett og trykk opp gjennom fremhælen.',
+    reps: '3 × 8–10 per ben',
+    handball: 'Svært lik bevegelsesmønsteret i satssteget – ensidig styrke og balanse som er avgjørende for eksplosivitet.',
+    injury: 'Styrker stabilisatorene rundt kneet og hoften – kritisk for å unngå lyskestrekk.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <line x1="10" y1="88" x2="190" y2="88" stroke="#444" stroke-width="1.5"/>
+      <rect x="130" y="68" width="40" height="20" rx="3" fill="#333" stroke="#555" stroke-width="1"/>
+      <ellipse cx="80" cy="18" rx="9" ry="9" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="80" y1="27" x2="80" y2="52" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="80" y1="52" x2="60" y2="70" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="60" y1="70" x2="55" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="80" y1="52" x2="120" y2="62" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="120" y1="62" x2="130" y2="68" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="80" y1="35" x2="62" y2="48" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="80" y1="35" x2="98" y2="48" stroke="#e8fa5b" stroke-width="2"/>
+      <text x="90" y="98" fill="#8b8fa8" font-size="8" text-anchor="middle">Bakfot på stol – hoften ned</text>
+    </svg>`
+  },
+  {
+    id: 7, name: 'Glute bridge', category: 'Ben / Bak',
+    muscles: ['Gluteus maximus', 'Hamstrings', 'Kjernemuskulatur'],
+    how: 'Ligg på ryggen med bøyde knær og føttene flatt i gulvet. Press hælene ned og løft hoften opp til kroppen er rett fra knær til skuldre. Hold 2 sek på toppen, senk kontrollert.',
+    reps: '3 × 15–20',
+    handball: 'Aktiverer setemuskulaturen som er motoren i all eksplosivitet – hopp, sprint og forsvarssteg.',
+    injury: 'Forebygger korsryggproblemer og hamstrings-strekk ved å aktivere gluteus som primærmotor.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <line x1="10" y1="88" x2="190" y2="88" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="165" cy="58" rx="9" ry="9" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="165" y1="67" x2="150" y2="78" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="150" y1="78" x2="130" y2="62" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="130" y1="62" x2="110" y2="78" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="110" y1="78" x2="100" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="150" y1="78" x2="140" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="165" y1="65" x2="148" y2="75" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="165" y1="65" x2="175" y2="78" stroke="#e8fa5b" stroke-width="2"/>
+      <path d="M130 55 L130 65" stroke="#4ade80" stroke-width="2" marker-end="url(#arr)"/>
+      <text x="100" y="98" fill="#8b8fa8" font-size="8" text-anchor="start">Løft hoften – rett linje knær–skuldre</text>
+    </svg>`
+  },
+  {
+    id: 8, name: 'Tåhev (enbeins)', category: 'Ben',
+    muscles: ['Leggmuskel (gastrocnemius)', 'Soleus', 'Fotsåle'],
+    how: 'Stå på ett ben på kanten av et trinn. Senk hælen under trinnets kant, deretter press deg opp på tå så høyt som mulig. Gjør bevegelsen sakte og kontrollert ned.',
+    reps: '3 × 12–15 per ben',
+    handball: 'Kraftig leggmuskulatur er avgjørende for satssteget i hoppskudd og for rask start i forsvarsbevegelser.',
+    injury: 'Forebygger hælseneproblemer (akillessene) som er svært vanlig hos håndballspillere.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <rect x="70" y="78" width="60" height="10" rx="2" fill="#333" stroke="#555" stroke-width="1"/>
+      <line x1="10" y1="88" x2="70" y2="88" stroke="#444" stroke-width="1.5"/>
+      <line x1="130" y1="88" x2="190" y2="88" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="100" cy="18" rx="9" ry="9" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="27" x2="100" y2="55" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="100" y1="55" x2="92" y2="75" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="92" y1="75" x2="90" y2="78" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="55" x2="108" y2="68" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="35" x2="85" y2="48" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="35" x2="115" y2="48" stroke="#e8fa5b" stroke-width="2"/>
+      <path d="M90 60 L90 50" stroke="#4ade80" stroke-width="2"/>
+      <text x="100" y="98" fill="#8b8fa8" font-size="8" text-anchor="middle">Press opp på tå – kontrollert ned</text>
+    </svg>`
+  },
+  {
+    id: 9, name: 'Planke (front)', category: 'Kjerne',
+    muscles: ['Rectus abdominis', 'Transversus abdominis', 'Skuldre', 'Gluteus'],
+    how: 'Ligg i push-up-posisjon men støtt på underarmene i stedet for hendene. Hold kroppen helt rett fra hode til hæl – ikke løft rumpa eller la hoften synke. Pust jevnt.',
+    reps: '3 × 20–45 sek',
+    handball: 'Kjernemuskulaturen er «kraftoverføreren» mellom ben og arm – en sterk kjerne gir hardere skudd.',
+    injury: 'Stabiliserer ryggsøylen og reduserer korsryggsmerte som er svært vanlig i idretter med mye rotasjon.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <line x1="10" y1="85" x2="190" y2="85" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="162" cy="45" rx="9" ry="9" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="162" y1="54" x2="100" y2="62" stroke="#e8fa5b" stroke-width="3"/>
+      <line x1="100" y1="62" x2="50" y2="68" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="50" y1="68" x2="35" y2="85" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="50" y1="68" x2="65" y2="85" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="140" y1="58" x2="128" y2="72" stroke="#e8fa5b" stroke-width="2"/>
+      <circle cx="128" cy="74" r="3" fill="#e8fa5b"/>
+      <line x1="120" y1="60" x2="108" y2="74" stroke="#e8fa5b" stroke-width="2"/>
+      <circle cx="108" cy="76" r="3" fill="#e8fa5b"/>
+      <line x1="100" y1="58" x2="100" y2="54" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="2,2"/>
+      <text x="65" y="98" fill="#8b8fa8" font-size="8" text-anchor="start">Rett linje hode til hæl – pust jevnt</text>
+    </svg>`
+  },
+  {
+    id: 10, name: 'Sideplank', category: 'Kjerne',
+    muscles: ['Oblique (sidebukmuskler)', 'Quadratus lumborum', 'Hofte-abduktorer'],
+    how: 'Ligg på siden med underarmen i gulvet og skulderen rett over albuen. Løft hoften slik at kroppen danner en rett linje. Hold stillingen. Bytt side.',
+    reps: '3 × 20–40 sek per side',
+    handball: 'Sidebuken er motoren i rotasjonsbevegelsen i kast – sterkere sidebuker gir mer kraft i avslutningen.',
+    injury: 'Forebygger lyskeskader og stabiliserer ryggsøylen under raske retningsskift.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <line x1="10" y1="85" x2="190" y2="85" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="158" cy="42" rx="9" ry="9" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="158" y1="51" x2="110" y2="65" stroke="#e8fa5b" stroke-width="3"/>
+      <line x1="110" y1="65" x2="60" y2="72" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="60" y1="72" x2="35" y2="80" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="35" y1="80" x2="35" y2="85" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="110" y1="65" x2="112" y2="85" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="158" y1="55" x2="155" y2="72" stroke="#e8fa5b" stroke-width="2"/>
+      <circle cx="155" cy="74" r="3" fill="#e8fa5b"/>
+      <text x="100" y="98" fill="#8b8fa8" font-size="8" text-anchor="middle">Hoften opp – rett linje, bytt side</text>
+    </svg>`
+  },
+  {
+    id: 11, name: 'Crunches', category: 'Kjerne',
+    muscles: ['Rectus abdominis (magemuskel)'],
+    how: 'Ligg på ryggen med bøyde knær og føtter i gulvet. Legg hendene lett bak ørene. Løft skulderblader fra gulvet ved å krumme inn i magen – IKKE dra i nakken. Senk kontrollert.',
+    reps: '3 × 20',
+    handball: 'Styrker bukmuskelen som er viktig for rask rotasjon og bukveggens beskyttelse av innvoller ved duell.',
+    injury: 'Styrker magen som støtter korsryggen – men gjør øvelsen riktig for å unngå nakkebelastning.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <line x1="10" y1="88" x2="190" y2="88" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="148" cy="48" rx="9" ry="9" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="148" y1="57" x2="130" y2="68" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="130" y1="68" x2="100" y2="72" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="100" y1="72" x2="60" y2="72" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="60" y1="72" x2="45" y2="60" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="45" y1="60" x2="35" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="60" y1="72" x2="65" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="148" y1="57" x2="158" y2="68" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="158" y1="68" x2="162" y2="72" stroke="#e8fa5b" stroke-width="2"/>
+      <path d="M130 58 Q120 50 110 58" stroke="#4ade80" stroke-width="1.5" fill="none"/>
+      <text x="100" y="98" fill="#8b8fa8" font-size="8" text-anchor="middle">Skulderblader opp – ikke dra i nakken</text>
+    </svg>`
+  },
+  {
+    id: 12, name: 'Russian twist', category: 'Kjerne',
+    muscles: ['Oblique (sidebukmuskler)', 'Rectus abdominis'],
+    how: 'Sitt med bøyde knær, hæler lett hevet fra gulvet, kroppen lent 45° bakover. Hold hendene samlet foran deg. Roter overkroppen fra side til side og touch gulvet ved siden av hoften.',
+    reps: '3 × 20 (10 per side)',
+    handball: 'Rotasjonsstyrke er direkte overførbart til kaste- og skuddkraft – dette er kjerneøvelsen for kastere.',
+    injury: 'Styrker oblique som beskytter ryggsøylen under vridningsbevegelser i kamp.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <line x1="10" y1="88" x2="190" y2="88" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="100" cy="28" rx="9" ry="9" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="37" x2="100" y2="62" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="100" y1="62" x2="75" y2="75" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="75" y1="75" x2="70" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="62" x2="125" y2="75" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="125" y1="75" x2="130" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="46" x2="135" y2="55" stroke="#4ade80" stroke-width="2"/>
+      <circle cx="138" cy="55" r="4" fill="none" stroke="#4ade80" stroke-width="1.5"/>
+      <path d="M100 46 Q118 38 135 45" stroke="#4ade80" stroke-width="1.5" fill="none" stroke-dasharray="3,2"/>
+      <text x="100" y="98" fill="#8b8fa8" font-size="8" text-anchor="middle">Roter fra side til side – touch gulvet</text>
+    </svg>`
+  },
+  {
+    id: 13, name: 'Superman-løft', category: 'Rygg',
+    muscles: ['Erector spinae (ryggradsmuskel)', 'Gluteus', 'Hamstrings'],
+    how: 'Ligg på magen med armene strakt fremover. Løft simultant høyre arm og venstre ben fra gulvet, hold 2 sek, senk. Bytt side. Hold blikket ned mot gulvet.',
+    reps: '3 × 12 per side',
+    handball: 'Styrker korsryggen som er kraftsenteret i alle kastebevegelser og landings-stabilisering.',
+    injury: 'Kritisk forebyggende øvelse mot korsryggskader som er svært vanlig i håndball – særlig etter gjentatte hopp og landinger.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <line x1="10" y1="72" x2="190" y2="72" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="95" cy="52" rx="9" ry="9" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="95" y1="61" x2="120" y2="65" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="120" y1="65" x2="155" y2="65" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="155" y1="65" x2="170" y2="58" stroke="#4ade80" stroke-width="2"/>
+      <line x1="95" y1="55" x2="60" y2="55" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="60" y1="55" x2="40" y2="48" stroke="#4ade80" stroke-width="2"/>
+      <line x1="120" y1="65" x2="115" y2="72" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="140" y1="65" x2="143" y2="72" stroke="#e8fa5b" stroke-width="2"/>
+      <text x="100" y="85" fill="#8b8fa8" font-size="8" text-anchor="middle">Arm og motsatt ben opp – hold 2 sek</text>
+    </svg>`
+  },
+  {
+    id: 14, name: 'Omvendt skulderøvelse (Y-T-W)', category: 'Rygg / Skulder',
+    muscles: ['Trapezius', 'Rhomboideus', 'Rotatormansjett', 'Bakre deltoid'],
+    how: 'Ligg på magen eller stå foroverbøyd. Form armene i Y (diagonalt opp), T (rett ut til siden) og W (albuer bøyd, hender opp). Hold hver posisjon 2 sek og senk.',
+    reps: '3 × 8 i hver posisjon',
+    handball: 'Styrker de bakre skulderstabilisatorene som er essensielle for å tåle gjentatte kastebelastninger.',
+    injury: 'Den viktigste skadeforebyggende skulderøvelsen for kastere – reduserer risikoen for supraspinatus-skader dramatisk.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <!-- Y -->
+      <text x="35" y="20" fill="#e8fa5b" font-size="14" font-weight="bold" text-anchor="middle">Y</text>
+      <line x1="35" y1="30" x2="35" y2="55" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="35" y1="36" x2="20" y2="25" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="35" y1="36" x2="50" y2="25" stroke="#e8fa5b" stroke-width="2"/>
+      <!-- T -->
+      <text x="100" y="20" fill="#4ade80" font-size="14" font-weight="bold" text-anchor="middle">T</text>
+      <line x1="100" y1="30" x2="100" y2="55" stroke="#4ade80" stroke-width="2"/>
+      <line x1="80" y1="38" x2="120" y2="38" stroke="#4ade80" stroke-width="2"/>
+      <!-- W -->
+      <text x="165" y="20" fill="#60a5fa" font-size="14" font-weight="bold" text-anchor="middle">W</text>
+      <line x1="165" y1="30" x2="165" y2="55" stroke="#60a5fa" stroke-width="2"/>
+      <line x1="150" y1="30" x2="157" y2="40" stroke="#60a5fa" stroke-width="2"/>
+      <line x1="157" y1="40" x2="165" y2="35" stroke="#60a5fa" stroke-width="2"/>
+      <line x1="180" y1="30" x2="173" y2="40" stroke="#60a5fa" stroke-width="2"/>
+      <line x1="173" y1="40" x2="165" y2="35" stroke="#60a5fa" stroke-width="2"/>
+      <text x="100" y="75" fill="#8b8fa8" font-size="8" text-anchor="middle">Y → T → W, hold 2 sek hver</text>
+      <text x="100" y="85" fill="#8b8fa8" font-size="8" text-anchor="middle">Den viktigste skulderøvelsen for kastere</text>
+    </svg>`
+  },
+  {
+    id: 15, name: 'Skulderrotasjon (ekstern)', category: 'Skulder',
+    muscles: ['Infraspinatus', 'Teres minor (rotatormansjett)'],
+    how: 'Ligg på siden med albuen bøyd 90° og inntil kroppen. Hold en lett flaske/ball i hånden. Roter underarmen utover (opp) ved å bruke skulderen – ikke svinge. Senk kontrollert.',
+    reps: '3 × 15 per arm',
+    handball: 'Rotatormansjetten kontrollerer kastebevegelsen og er den mest skadeutsatte strukturen hos kastere.',
+    injury: 'Den aller viktigste skadeforebyggende øvelsen for skulderhelse hos håndballspillere. Gjør denne ALLTID.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <line x1="10" y1="72" x2="190" y2="72" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="150" cy="45" rx="9" ry="9" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="150" y1="54" x2="130" y2="64" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="130" y1="64" x2="100" y2="66" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="66" x2="60" y2="68" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="130" y1="64" x2="125" y2="72" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="105" y1="66" x2="100" y2="72" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="150" y1="56" x2="138" y2="62" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="138" y1="62" x2="145" y2="45" stroke="#4ade80" stroke-width="2.5"/>
+      <circle cx="145" cy="43" r="4" fill="none" stroke="#4ade80" stroke-width="1.5"/>
+      <path d="M138 62 Q150 55 145 45" stroke="#4ade80" stroke-width="1.5" fill="none" stroke-dasharray="3,2"/>
+      <text x="100" y="85" fill="#8b8fa8" font-size="8" text-anchor="middle">Albue inntil kroppen – roter bare skulder</text>
+    </svg>`
+  },
+  {
+    id: 16, name: 'Veggstrekk skulder', category: 'Skulder',
+    muscles: ['Pectoralis minor', 'Fremre skulder', 'Biceps'],
+    how: 'Stå ved en vegg, legg én underarm flatt mot veggen med albue i 90°. Drei kroppen bort fra veggen til du kjenner strekk foran i skulder og bryst. Hold 30 sek, bytt side.',
+    reps: '2 × 30 sek per side',
+    handball: 'Håndballkasting forkorter bryst- og skuldermusklene over tid – dette motvirker den ubalansen.',
+    injury: 'Forebygger skulderimpingement og opprettholder bevegeligheten som er nødvendig for smertefri kasting.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <rect x="150" y="10" width="8" height="78" fill="#333" stroke="#555" stroke-width="1"/>
+      <line x1="10" y1="88" x2="190" y2="88" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="100" cy="28" rx="9" ry="9" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="37" x2="100" y2="65" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="100" y1="65" x2="82" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="65" x2="118" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="44" x2="150" y2="44" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="150" y1="44" x2="150" y2="62" stroke="#4ade80" stroke-width="2.5"/>
+      <path d="M90 35 Q80 30 75 38" stroke="#4ade80" stroke-width="1.5" fill="none"/>
+      <text x="75" y="98" fill="#8b8fa8" font-size="8" text-anchor="middle">Drei bort fra veggen – kjenner foran</text>
+    </svg>`
+  },
+  {
+    id: 17, name: 'Pistol squat (assistert)', category: 'Ben',
+    muscles: ['Quadriceps', 'Gluteus', 'Balanse', 'Kjernemuskulatur'],
+    how: 'Hold i en dørkarme eller stolrygg for støtte. Stå på ett ben, det andre beinet strakt fremfor deg. Senk deg kontrollert ned på ett ben så langt du klarer. Press opp igjen.',
+    reps: '3 × 5–8 per ben',
+    handball: 'Maksimal enbeinstyrke – dette er satssteget i hoppskudd på sitt absolutt tøffeste.',
+    injury: 'Avslører og utjevner styrkeubalanse mellom bena, noe som er en av de viktigste skadeforebyggende faktorene.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <line x1="10" y1="88" x2="190" y2="88" stroke="#444" stroke-width="1.5"/>
+      <rect x="148" y="20" width="6" height="68" fill="#333" stroke="#555" stroke-width="1"/>
+      <ellipse cx="100" cy="28" rx="9" ry="9" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="37" x2="100" y2="62" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="100" y1="62" x2="88" y2="82" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="88" y1="82" x2="85" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="62" x2="135" y2="55" stroke="#4ade80" stroke-width="2"/>
+      <line x1="100" y1="45" x2="148" y2="40" stroke="#e8fa5b" stroke-width="2"/>
+      <text x="75" y="98" fill="#8b8fa8" font-size="8" text-anchor="middle">Ett ben ned – det andre strakt frem</text>
+    </svg>`
+  },
+  {
+    id: 18, name: 'Nordic hamstring curl', category: 'Ben / Bak',
+    muscles: ['Hamstrings (bakside lår)', 'Gluteus'],
+    how: 'Kneel på et mykt underlag med noen som holder anklene dine (eller fest under en sofa). Hold kroppen rett. Fall sakte fremover og brems deg med hamstrings. Bruk hendene for å stoppe på gulvet og press deg opp.',
+    reps: '3 × 5–8',
+    handball: 'Hamstrings absorberer bremsekreftene ved landing – svake hamstrings er den viktigste risikofaktoren for ACL-skade.',
+    injury: 'Klinisk bevist å redusere hamstrings-strekk med over 50% og ACL-skader med opp mot 40%. Gjøres av alle lag.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <line x1="10" y1="85" x2="190" y2="85" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="50" cy="42" rx="9" ry="9" fill="none" stroke="#4ade80" stroke-width="2"/>
+      <line x1="50" y1="51" x2="80" y2="68" stroke="#4ade80" stroke-width="2.5"/>
+      <line x1="80" y1="68" x2="80" y2="85" stroke="#4ade80" stroke-width="2"/>
+      <line x1="80" y1="68" x2="60" y2="85" stroke="#4ade80" stroke-width="2"/>
+      <line x1="50" y1="51" x2="38" y2="62" stroke="#4ade80" stroke-width="2"/>
+      <line x1="50" y1="51" x2="62" y2="62" stroke="#4ade80" stroke-width="2"/>
+      <ellipse cx="148" cy="55" rx="9" ry="9" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="148" y1="64" x2="155" y2="82" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="155" y1="82" x2="140" y2="85" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="155" y1="82" x2="165" y2="85" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="148" y1="64" x2="118" y2="75" stroke="#e8fa5b" stroke-width="2"/>
+      <circle cx="115" cy="76" r="4" fill="#e8fa5b" opacity="0.5"/>
+      <path d="M90 60 L105 60" stroke="#888" stroke-width="1.5"/>
+      <text x="100" y="98" fill="#8b8fa8" font-size="8" text-anchor="middle">Fall sakte frem – brems med bakside lår</text>
+    </svg>`
+  },
+  {
+    id: 19, name: 'Hopp med knestrekk (tuck jump)', category: 'Eksplosivitet',
+    muscles: ['Quadriceps', 'Gluteus', 'Leggmuskler', 'Kjernemuskulatur'],
+    how: 'Stå med bena skulderbredde fra hverandre. Hopp så høyt du kan og trekk knærne opp mot brystet på toppen. Land mykt med bøyde knær. Reset og hopp igjen umiddelbart.',
+    reps: '3 × 8–10',
+    handball: 'Plyometrisk øvelse som utvikler den eksplosiviteten du trenger i satssteget til hoppskudd.',
+    injury: 'Trener myk landing med bøyde knær – dette er den viktigste teknikken for å beskytte kne og ankel ved landing.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <line x1="10" y1="88" x2="190" y2="88" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="60" cy="55" rx="9" ry="9" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="60" y1="64" x2="60" y2="78" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="60" y1="78" x2="48" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="60" y1="78" x2="72" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="60" y1="68" x2="48" y2="78" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="60" y1="68" x2="72" y2="78" stroke="#e8fa5b" stroke-width="2"/>
+      <ellipse cx="140" cy="25" rx="9" ry="9" fill="none" stroke="#4ade80" stroke-width="2"/>
+      <line x1="140" y1="34" x2="140" y2="52" stroke="#4ade80" stroke-width="2.5"/>
+      <line x1="140" y1="42" x2="125" y2="35" stroke="#4ade80" stroke-width="2"/>
+      <line x1="140" y1="42" x2="155" y2="35" stroke="#4ade80" stroke-width="2"/>
+      <line x1="140" y1="52" x2="125" y2="45" stroke="#4ade80" stroke-width="2"/>
+      <line x1="140" y1="52" x2="155" y2="45" stroke="#4ade80" stroke-width="2"/>
+      <path d="M90 70 L90 40" stroke="#888" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <path d="M86 43 L90 38 L94 43" stroke="#888" stroke-width="1.5" fill="none"/>
+      <text x="100" y="98" fill="#8b8fa8" font-size="8" text-anchor="middle">Knær til brystet i luften – land mykt</text>
+    </svg>`
+  },
+  {
+    id: 20, name: 'Lateral band walk (uten strikk)', category: 'Ben / Hofte',
+    muscles: ['Gluteus medius', 'Hofte-abduktorer', 'TFL'],
+    how: 'Ta en lett knebøyposisjon med bøyde knær og hoften noe bak. Ta store steg sidelengs mens du holder den lave posisjonen. Gå 10 steg til venstre, 10 til høyre.',
+    reps: '3 × 10 per side',
+    handball: 'Gluteus medius stabiliserer kneet under landing og sidelengs forsvarsbevegelser – svak gluteus medius er nær knyttet til kneskader.',
+    injury: 'Nøkkeløvelse for å forebygge kne-valgus (knærne faller innover) som er den vanligste skademekanismen for ACL-skade.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <line x1="10" y1="88" x2="190" y2="88" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="100" cy="28" rx="9" ry="9" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="37" x2="100" y2="58" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="100" y1="58" x2="75" y2="75" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="75" y1="75" x2="72" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="58" x2="125" y2="75" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="125" y1="75" x2="128" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="44" x2="80" y2="52" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="44" x2="120" y2="52" stroke="#e8fa5b" stroke-width="2"/>
+      <path d="M40 75 L60 75" stroke="#4ade80" stroke-width="2"/>
+      <path d="M43 71 L38 75 L43 79" stroke="#4ade80" stroke-width="1.5" fill="none"/>
+      <path d="M160 75 L140 75" stroke="#4ade80" stroke-width="2"/>
+      <path d="M157 71 L162 75 L157 79" stroke="#4ade80" stroke-width="1.5" fill="none"/>
+      <text x="100" y="98" fill="#8b8fa8" font-size="8" text-anchor="middle">Lav posisjon – steg sidelengs begge veier</text>
+    </svg>`
+  },
+  {
+    id: 21, name: 'Stående kjernerotasjon', category: 'Kjerne',
+    muscles: ['Oblique', 'Transversus abdominis', 'Erector spinae'],
+    how: 'Stå med bena skulderbredde fra hverandre. Hold hendene samlet foran brystet. Roter overkroppen så langt du klarer til venstre, deretter til høyre. Hoften skal stå stille.',
+    reps: '3 × 20 (10 per side)',
+    handball: 'Kasterotasjonen i håndball starter i kjernen – dette er den enkleste funksjonelle øvelsen for kastekraft.',
+    injury: 'Øker bevegeligheten i thorax (brystkasse) og avlaster korsryggen under raske rotasjoner.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <line x1="10" y1="88" x2="190" y2="88" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="100" cy="22" rx="9" ry="9" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="31" x2="100" y2="62" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="100" y1="62" x2="85" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="62" x2="115" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="100" y1="42" x2="135" y2="38" stroke="#4ade80" stroke-width="2.5"/>
+      <path d="M78 42 Q100 35 122 42" stroke="#4ade80" stroke-width="1.5" fill="none" stroke-dasharray="4,3"/>
+      <path d="M118 38 L124 42 L118 46" stroke="#4ade80" stroke-width="1.5" fill="none"/>
+      <text x="100" y="98" fill="#8b8fa8" font-size="8" text-anchor="middle">Hofte stille – bare overkroppen roterer</text>
+    </svg>`
+  },
+  {
+    id: 22, name: 'Hip hinge (Rumensk markløft)', category: 'Ben / Bak',
+    muscles: ['Hamstrings', 'Gluteus maximus', 'Erector spinae'],
+    how: 'Stå med bena hoftebredde fra hverandre. Ha lett bøyde knær. Lut forover ved å skyve hoften bakover – ikke knebøye. Rygg rett. Senk hendene langs beina til du kjenner strekk i hamstrings, deretter press hoften frem til du er rett.',
+    reps: '3 × 12–15',
+    handball: 'Hamstrings og gluteus er kraftmotorene i alle hopp og eksplosive bevegelser. Hip hinge er grunnbevegelsen for disse.',
+    injury: 'Lærer deg å laste hoften riktig fremfor ryggen – kritisk for å unngå korsryggskader ved tunge belastninger.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <line x1="10" y1="88" x2="190" y2="88" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="55" cy="22" rx="9" ry="9" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="55" y1="31" x2="55" y2="60" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="55" y1="60" x2="45" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="55" y1="60" x2="65" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="55" y1="40" x2="40" y2="50" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="55" y1="40" x2="70" y2="50" stroke="#e8fa5b" stroke-width="2"/>
+      <ellipse cx="138" cy="45" rx="9" ry="9" fill="none" stroke="#4ade80" stroke-width="2"/>
+      <line x1="138" y1="54" x2="120" y2="68" stroke="#4ade80" stroke-width="2.5"/>
+      <line x1="120" y1="68" x2="110" y2="88" stroke="#4ade80" stroke-width="2"/>
+      <line x1="120" y1="68" x2="130" y2="88" stroke="#4ade80" stroke-width="2"/>
+      <line x1="138" y1="54" x2="115" y2="60" stroke="#4ade80" stroke-width="2"/>
+      <line x1="138" y1="54" x2="155" y2="62" stroke="#4ade80" stroke-width="2"/>
+      <path d="M80 45 L100 45" stroke="#888" stroke-width="1.5"/>
+      <path d="M97 41 L102 45 L97 49" stroke="#888" stroke-width="1.5" fill="none"/>
+      <text x="100" y="98" fill="#8b8fa8" font-size="8" text-anchor="middle">Skyv hoften bakover – rygg rett hele veien</text>
+    </svg>`
+  },
+  {
+    id: 23, name: 'Bear crawl', category: 'Kjerne / Hele kroppen',
+    muscles: ['Kjernemuskulatur', 'Skuldre', 'Quadriceps', 'Koordinasjon'],
+    how: 'Start på alle fire med knærne en centimeter over gulvet. Beveg deg fremover ved å flytte høyre arm + venstre ben simultant, deretter venstre arm + høyre ben. Hold ryggen flat som et bord.',
+    reps: '3 × 15 meter frem og tilbake',
+    handball: 'Bygger anti-rotasjonsstyrke i kjernen og forbedrer koordinasjonen mellom arm og ben – direkte relevant for håndballbevegelser.',
+    injury: 'En av de beste totaløvelsene for skadeforebygging – belaster kroppen på en funksjonell måte uten kompresjonskrefter på ryggsøylen.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <line x1="10" y1="85" x2="190" y2="85" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="155" cy="42" rx="9" ry="9" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="155" y1="51" x2="120" y2="60" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="120" y1="60" x2="80" y2="62" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="140" y1="55" x2="148" y2="78" stroke="#e8fa5b" stroke-width="2"/>
+      <circle cx="148" cy="80" r="3" fill="#e8fa5b"/>
+      <line x1="100" y1="61" x2="85" y2="80" stroke="#4ade80" stroke-width="2"/>
+      <circle cx="85" cy="82" r="3" fill="#4ade80"/>
+      <line x1="80" y1="62" x2="55" y2="70" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="55" y1="70" x2="42" y2="80" stroke="#e8fa5b" stroke-width="2"/>
+      <circle cx="42" cy="82" r="3" fill="#e8fa5b"/>
+      <path d="M30 68 L20 68" stroke="#4ade80" stroke-width="2"/>
+      <path d="M23 64 L18 68 L23 72" stroke="#4ade80" stroke-width="1.5" fill="none"/>
+      <text x="100" y="95" fill="#8b8fa8" font-size="8" text-anchor="middle">Kryss arm/ben – rygg flat som bord</text>
+    </svg>`
+  },
+  {
+    id: 24, name: 'Wall sit', category: 'Ben',
+    muscles: ['Quadriceps', 'Gluteus', 'Kjernemuskulatur'],
+    how: 'Len ryggen mot en vegg og skli ned til knærne er i 90°. Lårene skal være parallelle med gulvet, knærne rett over anklene. Hold stillingen. Pust jevnt.',
+    reps: '3 × 30–60 sek',
+    handball: 'Bygger isometrisk utholdenhetsstyrke i lårene som er nødvendig for å holde lav forsvarsstilling i 60 minutter.',
+    injury: 'Trener kneet i en trygg, kontrollert posisjon – god rehabiliteringsøvelse etter kneproblemer.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <rect x="148" y="5" width="8" height="83" fill="#333" stroke="#555" stroke-width="1"/>
+      <line x1="10" y1="88" x2="190" y2="88" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="108" cy="22" rx="9" ry="9" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="108" y1="31" x2="148" y2="40" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="148" y1="40" x2="148" y2="68" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="148" y1="68" x2="105" y2="68" stroke="#e8fa5b" stroke-width="2.5"/>
+      <line x1="105" y1="68" x2="95" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="148" y1="68" x2="148" y2="88" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="108" y1="40" x2="88" y2="52" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="108" y1="40" x2="128" y2="52" stroke="#e8fa5b" stroke-width="2"/>
+      <path d="M105 58 Q102 64 105 68" stroke="#4ade80" stroke-width="1.5" fill="none"/>
+      <text x="70" y="98" fill="#8b8fa8" font-size="8" text-anchor="middle">90° knebøy mot vegg – hold!</text>
+    </svg>`
+  },
+  {
+    id: 25, name: 'Inchworm', category: 'Mobilitet / Hele kroppen',
+    muscles: ['Hamstrings', 'Skuldre', 'Kjernemuskulatur', 'Bryst'],
+    how: 'Stå med strake ben. Bøy deg ned og ta på gulvet, gå hendene fremover til plankeposisjon. Ta en push-up (valgfritt). Gå hendene tilbake mot beina og retter deg opp.',
+    reps: '3 × 8 repetisjoner',
+    handball: 'En komplett aktiveringsøvelse som varmer opp hele kroppen – perfekt som oppvarming før trening.',
+    injury: 'Tøyer hamstrings og aktiverer skuldre og kjerne simultant – forebygger muskelstrekk ved å varme opp hele kjeden.',
+    svg: `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="100" fill="none"/>
+      <line x1="10" y1="85" x2="190" y2="85" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="168" cy="25" rx="8" ry="8" fill="none" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="168" y1="33" x2="155" y2="70" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="155" y1="70" x2="148" y2="85" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="155" y1="70" x2="162" y2="85" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="168" y1="42" x2="152" y2="52" stroke="#e8fa5b" stroke-width="2"/>
+      <line x1="168" y1="42" x2="180" y2="35" stroke="#e8fa5b" stroke-width="2"/>
+      <ellipse cx="95" cy="42" rx="8" ry="8" fill="none" stroke="#4ade80" stroke-width="2"/>
+      <line x1="95" y1="50" x2="110" y2="68" stroke="#4ade80" stroke-width="2"/>
+      <line x1="95" y1="50" x2="60" y2="55" stroke="#4ade80" stroke-width="2.5"/>
+      <line x1="110" y1="68" x2="115" y2="85" stroke="#4ade80" stroke-width="2"/>
+      <line x1="110" y1="68" x2="100" y2="85" stroke="#4ade80" stroke-width="2"/>
+      <circle cx="60" cy="57" r="3" fill="#4ade80"/>
+      <circle cx="38" cy="58" r="3" fill="#4ade80"/>
+      <path d="M130 50 L115 50" stroke="#888" stroke-width="1.5"/>
+      <path d="M118 46 L113 50 L118 54" stroke="#888" stroke-width="1.5" fill="none"/>
+      <text x="100" y="95" fill="#8b8fa8" font-size="8" text-anchor="middle">Hender frem til planke – tilbake og opp</text>
+    </svg>`
+  },
+];
+
+const CATEGORY_COLORS = {
+  'Overkropp': '#60a5fa',
+  'Ben': '#4ade80',
+  'Ben / Bak': '#34d399',
+  'Ben / Hofte': '#10b981',
+  'Kjerne': '#e8fa5b',
+  'Kjerne / Hele kroppen': '#f59e0b',
+  'Rygg': '#a78bfa',
+  'Rygg / Skulder': '#8b5cf6',
+  'Skulder': '#f472b6',
+  'Eksplosivitet': '#fb923c',
+  'Mobilitet / Hele kroppen': '#38bdf8',
+};
+
+function PhysicalTraining() {
+  const [section, setSection] = useState('styrke');
+  const [expanded, setExpanded] = useState(null);
+  const [filterCat, setFilterCat] = useState('Alle');
+
+  const categories = ['Alle', ...Object.keys(CATEGORY_COLORS)];
+  const filtered = filterCat === 'Alle' ? STRENGTH_EXERCISES : STRENGTH_EXERCISES.filter(e => e.category === filterCat);
+
+  return (
+    <div>
+      <div className="page-header">
+        <div className="page-title">Fysisk trening 💪</div>
+        <div className="page-sub">Øvelsesbiblitek – kroppsvektøvelser for håndballspillere</div>
+      </div>
+
+      <div className="tabs" style={{marginBottom:'1rem'}}>
+        <button className={`tab${section==='styrke'?' active':''}`} onClick={()=>setSection('styrke')}>Styrke</button>
+        <button className={`tab${section==='kondisjon'?' active':''}`} onClick={()=>setSection('kondisjon')}>Kondisjon</button>
+        <button className={`tab${section==='spenst'?' active':''}`} onClick={()=>setSection('spenst')}>Spenst</button>
+      </div>
+
+      {section==='styrke' && (
+        <div>
+          <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:'1.25rem'}}>
+            {categories.map(c => (
+              <button key={c} onClick={()=>{setFilterCat(c);setExpanded(null);}} style={{
+                padding:'4px 10px',borderRadius:20,fontSize:'11px',fontWeight:500,cursor:'pointer',
+                border:`1px solid ${filterCat===c?(CATEGORY_COLORS[c]||'var(--accent)'):'var(--border)'}`,
+                background: filterCat===c?(CATEGORY_COLORS[c]||'var(--accent)')+'22':'transparent',
+                color: filterCat===c?(CATEGORY_COLORS[c]||'var(--accent)'):'var(--text2)',
+                fontFamily:'inherit'
+              }}>{c}</button>
+            ))}
+          </div>
+
+          <div style={{fontSize:'13px',color:'var(--text2)',marginBottom:'1rem'}}>{filtered.length} øvelser</div>
+
+          {filtered.map((ex) => (
+            <div key={ex.id} style={{border:'1px solid var(--border)',borderRadius:'var(--radius-sm)',marginBottom:'0.6rem',overflow:'hidden'}}>
+              <div
+                onClick={()=>setExpanded(expanded===ex.id?null:ex.id)}
+                style={{padding:'0.85rem 1rem',cursor:'pointer',display:'flex',alignItems:'center',gap:12,background:expanded===ex.id?'var(--bg3)':'var(--bg2)',transition:'background 0.15s'}}
+              >
+                <span style={{width:28,height:28,borderRadius:6,background:(CATEGORY_COLORS[ex.category]||'#888')+'22',color:(CATEGORY_COLORS[ex.category]||'#888'),fontSize:'11px',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{ex.id}</span>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:500,fontSize:'14px'}}>{ex.name}</div>
+                  <div style={{fontSize:'11px',color:'var(--text2)',marginTop:1}}>{ex.category} · {ex.reps}</div>
+                </div>
+                <div style={{display:'flex',gap:4,flexWrap:'wrap',justifyContent:'flex-end',maxWidth:200}}>
+                  {ex.muscles.slice(0,2).map((m,i)=><span key={i} className="badge badge-gray" style={{fontSize:'10px'}}>{m.split(' ')[0]}</span>)}
+                </div>
+                <span style={{color:'var(--text2)',fontSize:'18px',transform:expanded===ex.id?'rotate(90deg)':'none',transition:'transform 0.2s',marginLeft:4}}>›</span>
+              </div>
+
+              {expanded===ex.id && (
+                <div style={{background:'var(--bg)',borderTop:'1px solid var(--border)',padding:'1.25rem'}}>
+                  <div className="grid grid-2" style={{gap:'1.25rem'}}>
+                    <div>
+                      <div style={{marginBottom:'1rem',background:'var(--bg2)',borderRadius:'var(--radius-sm)',padding:'0.75rem',display:'flex',justifyContent:'center'}}
+                        dangerouslySetInnerHTML={{__html: ex.svg}}
+                      />
+                      <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+                        {ex.muscles.map((m,i)=><span key={i} className="badge" style={{fontSize:'10px',background:(CATEGORY_COLORS[ex.category]||'#888')+'18',color:(CATEGORY_COLORS[ex.category]||'#888')}}>{m}</span>)}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{marginBottom:'0.85rem'}}>
+                        <div style={{fontSize:'11px',color:'var(--text2)',fontWeight:600,letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:4}}>Utførelse</div>
+                        <p style={{fontSize:'13px',lineHeight:1.7,color:'var(--text)'}}>{ex.how}</p>
+                      </div>
+                      <div style={{marginBottom:'0.85rem'}}>
+                        <div style={{fontSize:'11px',color:'var(--text2)',fontWeight:600,letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:4}}>Sets / reps</div>
+                        <span className="badge badge-yellow" style={{fontSize:'12px'}}>{ex.reps}</span>
+                      </div>
+                      <div style={{marginBottom:'0.85rem',padding:'0.75rem',background:'rgba(74,222,128,0.06)',borderRadius:'var(--radius-sm)',border:'1px solid rgba(74,222,128,0.15)'}}>
+                        <div style={{fontSize:'11px',color:'var(--accent2)',fontWeight:600,marginBottom:4}}>🤾 Håndball-relevans</div>
+                        <p style={{fontSize:'12px',lineHeight:1.6,color:'var(--text2)'}}>{ex.handball}</p>
+                      </div>
+                      <div style={{padding:'0.75rem',background:'rgba(248,113,113,0.06)',borderRadius:'var(--radius-sm)',border:'1px solid rgba(248,113,113,0.15)'}}>
+                        <div style={{fontSize:'11px',color:'#f87171',fontWeight:600,marginBottom:4}}>🛡️ Skadeforebygging</div>
+                        <p style={{fontSize:'12px',lineHeight:1.6,color:'var(--text2)'}}>{ex.injury}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {section==='kondisjon' && (
+        <div style={{padding:'2rem',textAlign:'center',color:'var(--text2)'}}>
+          <div style={{fontSize:'32px',marginBottom:'0.75rem'}}>🏃‍♀️</div>
+          <p style={{fontSize:'14px'}}>Kondisjonsdelen kommer snart!</p>
+        </div>
+      )}
+      {section==='spenst' && (
+        <div style={{padding:'2rem',textAlign:'center',color:'var(--text2)'}}>
+          <div style={{fontSize:'32px',marginBottom:'0.75rem'}}>⬆️</div>
+          <p style={{fontSize:'14px'}}>Spenst og plyometri kommer snart!</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SetupPage({ dbReady }) {
+  const SQL = `-- Kjør dette i Supabase SQL Editor
+-- supabase.com → ditt prosjekt → SQL Editor → New query → Run
+
+create table if not exists players (
+  id bigint generated always as identity primary key,
+  name text not null,
+  number text,
+  position text,
+  strengths text,
+  weaknesses text,
+  notes text,
+  attendance_rate int default 0,
+  avatar_color text default '#e8fa5b'
+);
+
+create table if not exists trainings (
+  id bigint generated always as identity primary key,
+  date date not null,
+  type text,
+  present int[] default '{}',
+  absent int[] default '{}'
+);
+
+create table if not exists mastery (
+  id bigint generated always as identity primary key,
+  player_id int not null,
+  date date not null,
+  skill text,
+  note text,
+  coach text
+);
+
+create table if not exists injuries (
+  id bigint generated always as identity primary key,
+  player_id int not null,
+  date date not null,
+  type text,
+  status text default 'aktiv',
+  desc text,
+  return_date date
+);
+
+create table if not exists messages (
+  id bigint generated always as identity primary key,
+  "from" text,
+  "to" text,
+  text text,
+  date date not null,
+  read boolean default false
+);
+
+alter table players enable row level security;
+alter table trainings enable row level security;
+alter table mastery enable row level security;
+alter table injuries enable row level security;
+alter table messages enable row level security;
+
+create policy "allow all" on players for all using (true) with check (true);
+create policy "allow all" on trainings for all using (true) with check (true);
+create policy "allow all" on mastery for all using (true) with check (true);
+create policy "allow all" on injuries for all using (true) with check (true);
+create policy "allow all" on messages for all using (true) with check (true);`;
+
+  const [copied, setCopied] = useState(false);
+  function copy() { navigator.clipboard.writeText(SQL); setCopied(true); setTimeout(()=>setCopied(false),2500); }
+
+  return (
+    <div>
+      <div className="page-header">
+        <div className="page-title">Supabase database-oppsett ⚙️</div>
+        <div className="page-sub">Kjør SQL-en under for å aktivere lagring av all data</div>
+      </div>
+
+      <div className="grid grid-2" style={{marginBottom:'1.5rem'}}>
+        <div className="stat-card">
+          <div className="stat-label">Database status</div>
+          <div style={{fontSize:'14px',marginTop:6,color:dbReady?'var(--accent2)':'#f87171',fontWeight:500}}>
+            {dbReady ? '✅ Tilkoblet og klar' : '⚠️ Tabeller mangler – kjør SQL under'}
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Prosjekt URL</div>
+          <div style={{fontSize:'11px',fontFamily:'monospace',color:'var(--text2)',marginTop:6,wordBreak:'break-all'}}>https://mnidhkpyrbhiiqnknzmm.supabase.co</div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem'}}>
+          <div className="card-title" style={{margin:0}}>SQL – opprett tabeller og tilganger</div>
+          <button className="btn btn-primary btn-sm" onClick={copy}>{copied ? '✓ Kopiert!' : 'Kopier SQL'}</button>
+        </div>
+        <div style={{background:'var(--bg)',borderRadius:'var(--radius-sm)',padding:'1rem',overflowX:'auto',marginBottom:'1rem'}}>
+          <pre style={{fontFamily:'monospace',fontSize:'11px',color:'var(--text2)',margin:0,whiteSpace:'pre-wrap',lineHeight:1.8}}>{SQL}</pre>
+        </div>
+        <div style={{padding:'1rem',background:'rgba(232,250,91,0.06)',borderRadius:'var(--radius-sm)',border:'1px solid rgba(232,250,91,0.15)'}}>
+          <p style={{fontSize:'13px',color:'var(--accent)',fontWeight:500,marginBottom:8}}>Slik gjør du det:</p>
+          <ol style={{fontSize:'13px',color:'var(--text2)',lineHeight:2,paddingLeft:'1.25rem'}}>
+            <li>Gå til <strong style={{color:'var(--text)'}}>supabase.com</strong> og logg inn</li>
+            <li>Velg prosjektet <strong style={{color:'var(--text)'}}>mnidhkpyrbhiiqnknzmm</strong></li>
+            <li>Klikk <strong style={{color:'var(--text)'}}>SQL Editor</strong> i venstremenyen</li>
+            <li>Klikk <strong style={{color:'var(--text)'}}>New query</strong></li>
+            <li>Lim inn SQL-en over og klikk <strong style={{color:'var(--text)'}}>Run</strong></li>
+            <li>Last inn appen på nytt – den grønne prikken øverst bekrefter tilkobling!</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
